@@ -1,4 +1,4 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../models/eds_point.dart';
@@ -16,11 +16,7 @@ class SharingService {
 
   Future<bool> _isDuplicate(EdsPoint point) async {
     final existingPoints = await EdsStorageService().loadCustomPoints();
-    return existingPoints.any((existing) =>
-        existing.startLatitude == point.startLatitude &&
-        existing.startLongitude == point.startLongitude &&
-        existing.endLatitude == point.endLatitude &&
-        existing.endLongitude == point.endLongitude);
+    return existingPoints.any((existing) => existing.hasSameCoordinates(point));
   }
 
 
@@ -133,7 +129,7 @@ class SharingService {
     ).toFirestore());
   }
 
-  Future<List<CommunityPoint>> getCommunityPoints({
+  Future<Map<String, dynamic>> getCommunityPoints({
     required String region,
     int limit = 20,
     DocumentSnapshot? lastDoc,
@@ -149,9 +145,14 @@ class SharingService {
     }
 
     final snapshot = await query.get();
-    return snapshot.docs
+    final points = snapshot.docs
         .map((doc) => CommunityPoint.fromFirestore(doc))
         .toList();
+
+    return {
+      'points': points,
+      'lastDoc': snapshot.docs.isNotEmpty ? snapshot.docs.last : null,
+    };
   }
 
   Future<void> upvoteCommunityPoint(String pointId) async {

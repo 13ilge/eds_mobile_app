@@ -1,4 +1,4 @@
-﻿import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/eds_point.dart';
 import '../models/speed_data.dart';
 import 'dart:math' as math;
@@ -15,7 +15,10 @@ class EdsGeofenceService {
 
   static const double _boundingBoxThreshold = 0.006;
 
-  EdsGeofenceService() {
+  static final EdsGeofenceService _instance = EdsGeofenceService._internal();
+  factory EdsGeofenceService() => _instance;
+
+  EdsGeofenceService._internal() {
     reloadPoints();
   }
 

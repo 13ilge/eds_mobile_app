@@ -1,4 +1,4 @@
-﻿class EdsPoint {
+class EdsPoint {
   final String id;
   final String name;
   final double startLatitude;
@@ -43,5 +43,13 @@
       isBidirectional: json['isBidirectional'] ?? true,
       speedLimit: json['speedLimit'] ?? 82,
     );
+  }
+
+  bool hasSameCoordinates(EdsPoint other) {
+    const epsilon = 0.00001; // tolerance for floating point drift
+    return (startLatitude - other.startLatitude).abs() < epsilon &&
+           (startLongitude - other.startLongitude).abs() < epsilon &&
+           (endLatitude - other.endLatitude).abs() < epsilon &&
+           (endLongitude - other.endLongitude).abs() < epsilon;
   }
 }

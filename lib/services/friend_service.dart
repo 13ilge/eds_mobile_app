@@ -1,4 +1,4 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/friendship.dart';
 import '../models/user_profile.dart';
@@ -24,16 +24,21 @@ class FriendService {
   Future<void> sendFriendRequest(String targetUid, String targetName) async {
     if (targetUid == _myUid) return;
 
-    final existing = await _firestore
-        .collection('friendships')
-        .where('participants', arrayContains: _myUid)
-        .get();
+    // Targeted queries: check both directions, max 2 reads (F2 optimization)
+    final results = await Future.wait([
+      _firestore.collection('friendships')
+          .where('fromUid', isEqualTo: _myUid)
+          .where('toUid', isEqualTo: targetUid)
+          .limit(1)
+          .get(),
+      _firestore.collection('friendships')
+          .where('fromUid', isEqualTo: targetUid)
+          .where('toUid', isEqualTo: _myUid)
+          .limit(1)
+          .get(),
+    ]);
 
-    final alreadyExists = existing.docs.any((doc) {
-      final data = doc.data();
-      final participants = List<String>.from(data['participants'] ?? []);
-      return participants.contains(targetUid);
-    });
+    final alreadyExists = results.any((snap) => snap.docs.isNotEmpty);
 
     if (alreadyExists) {
       throw Exception('Bu kullanıcıyla zaten bir arkadaşlık isteği veya bağlantı mevcut.');

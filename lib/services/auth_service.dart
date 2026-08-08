@@ -1,4 +1,4 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -116,9 +116,29 @@ class AuthService {
     if (user != null) {
       final uid = user.uid;
       
-      await _firestore.collection('users').doc(uid).delete();
+      await Purchases.logOut();
+      EdsStorageService().clearCache();
+      
+      final batch = _firestore.batch();
+      
+      // Delete user document
+      batch.delete(_firestore.collection('users').doc(uid));
+      
+      // Delete related friendships
+      final sentFriendships = await _firestore.collection('friendships').where('fromUid', isEqualTo: uid).get();
+      for (final doc in sentFriendships.docs) batch.delete(doc.reference);
+      
+      final receivedFriendships = await _firestore.collection('friendships').where('toUid', isEqualTo: uid).get();
+      for (final doc in receivedFriendships.docs) batch.delete(doc.reference);
+      
+      // Delete received shares
+      final sharedPoints = await _firestore.collection('shared_points').where('targetUid', isEqualTo: uid).get();
+      for (final doc in sharedPoints.docs) batch.delete(doc.reference);
+      
+      await batch.commit();
       
       await user.delete();
+      await EdsGeofenceService().reloadPoints();
     }
   }
 }

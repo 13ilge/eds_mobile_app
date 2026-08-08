@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../services/subscription_service.dart';
@@ -146,7 +146,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                   else
                     const Center(
                       child: Text(
-                        'Åu an için erişilebilir paket bulunamadı.',
+                        'Şu an için erişilebilir paket bulunamadı.',
                         style: TextStyle(color: DesignTokens.textSecondary),
                       ),
                     ),

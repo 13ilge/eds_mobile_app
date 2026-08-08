@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/friendship.dart';
 import '../providers/auth_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/subscription_provider.dart';
+import 'package:shimmer/shimmer.dart';
 import '../theme/design_tokens.dart';
 import 'paywall_view.dart';
 
@@ -350,7 +351,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => _buildShimmerList(),
       error: (err, _) => Center(
         child: Text('Hata: $err',
             style: const TextStyle(color: DesignTokens.textGrey)),
@@ -479,11 +480,55 @@ class _FriendsViewState extends ConsumerState<FriendsView>
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => _buildShimmerList(),
       error: (err, _) => Center(
         child: Text('Hata: $err',
             style: const TextStyle(color: DesignTokens.textGrey)),
       ),
+    );
+  }
+
+  Widget _buildShimmerList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: DesignTokens.cardSurface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(width: 120, height: 16, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(width: 80, height: 12, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

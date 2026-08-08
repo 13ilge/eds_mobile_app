@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/design_tokens.dart';
@@ -159,7 +159,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
                       
                       _buildTextField(
                         controller: _passwordController,
-                        label: 'Åifre',
+                        label: 'Şifre',
                         icon: Icons.lock_outline,
                         obscureText: true,
                       ),
@@ -201,7 +201,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
                 OutlinedButton.icon(
                   onPressed: _isLoading ? null : _signInWithGoogle,
                   icon: Image.asset(
-                    'assets/google_logo.png', // Not: Eğer asset yoksa bu ikon hata verir. Åimdilik ikonu material'dan alalım veya hata vermemesi için Icons.g_mobiledata kullanalım.
+                    'assets/google_logo.png', // Not: Eğer asset yoksa bu ikon hata verir. Şimdilik ikonu material'dan alalım veya hata vermemesi için Icons.g_mobiledata kullanalım.
                     height: 24,
                     errorBuilder: (context, error, stackTrace) => 
                         const Icon(Icons.g_mobiledata, size: 28, color: DesignTokens.textDark),

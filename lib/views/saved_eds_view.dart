@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/eds_point.dart';
 import '../services/eds_storage_service.dart';
@@ -317,7 +317,7 @@ class _ShareBottomSheetState extends ConsumerState<_ShareBottomSheet> {
           DropdownButtonFormField<String>(
             value: _selectedRegion,
             decoration: const InputDecoration(
-              labelText: 'Åehir Seçin',
+              labelText: 'Şehir Seçin',
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),

@@ -1,7 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../models/community_point.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/eds_point.dart';
 import '../providers/sharing_provider.dart';
+import '../services/eds_storage_service.dart';
+import '../services/eds_geofence_service.dart';
 import '../theme/design_tokens.dart';
 
 class CommunityView extends ConsumerStatefulWidget {
@@ -14,9 +19,12 @@ class CommunityView extends ConsumerStatefulWidget {
 class _CommunityViewState extends ConsumerState<CommunityView> {
   String _selectedRegion = 'malatya';
   final List<CommunityPoint> _points = [];
+  List<EdsPoint> _customPoints = [];
   bool _isLoading = false;
   bool _hasMore = true;
   final Map<String, bool> _upvoteStates = {};
+  final ScrollController _scrollController = ScrollController();
+  DocumentSnapshot? _lastDoc;
 
   static const List<String> _regions = [
     'Malatya', 'Elazığ', 'Ankara', 'İstanbul', 'İzmir',
@@ -28,7 +36,15 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
   @override
   void initState() {
     super.initState();
+    _loadCustomPoints();
     _loadPoints(reset: true);
+  }
+
+  Future<void> _loadCustomPoints() async {
+    final points = await EdsStorageService().loadCustomPoints();
+    if (mounted) {
+      setState(() => _customPoints = points);
+    }
   }
 
   Future<void> _loadPoints({bool reset = false}) async {
@@ -39,18 +55,26 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
       _points.clear();
       _hasMore = true;
       _upvoteStates.clear();
+      _lastDoc = null;
     }
 
     try {
       final service = ref.read(sharingServiceProvider);
-      final newPoints = await service.getCommunityPoints(
+      final result = await service.getCommunityPoints(
         region: _selectedRegion,
         limit: 20,
+        lastDoc: _lastDoc,
       );
 
-      for (final point in newPoints) {
-        final hasVoted = await service.hasUpvoted(point.id);
-        _upvoteStates[point.id] = hasVoted;
+      final newPoints = result['points'] as List<CommunityPoint>;
+      _lastDoc = result['lastDoc'] as DocumentSnapshot?;
+
+      // Parallel fetch instead of sequential N+1 reads (F1 optimization)
+      final voteResults = await Future.wait(
+        newPoints.map((point) => service.hasUpvoted(point.id)),
+      );
+      for (int i = 0; i < newPoints.length; i++) {
+        _upvoteStates[newPoints[i].id] = voteResults[i];
       }
 
       setState(() {
@@ -112,6 +136,33 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('${point.edsPoint.name} noktanıza eklendi!')),
         );
+        _loadCustomPoints();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    }
+  }
+
+  bool _isPointImported(CommunityPoint point) {
+    return _customPoints.any((existing) => existing.hasSameCoordinates(point.edsPoint));
+  }
+
+  Future<void> _removePoint(CommunityPoint point) async {
+    try {
+      final target = _customPoints.firstWhere((existing) => existing.hasSameCoordinates(point.edsPoint));
+
+      await EdsStorageService().deleteCustomPoint(target.id);
+      await EdsGeofenceService().reloadPoints();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${point.edsPoint.name} noktanızdan çıkarıldı!')),
+        );
+        _loadCustomPoints();
       }
     } catch (e) {
       if (mounted) {
@@ -140,7 +191,7 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
             child: DropdownButtonFormField<String>(
               value: _selectedRegion,
               decoration: InputDecoration(
-                labelText: 'Åehir',
+                labelText: 'Şehir',
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12)),
                 contentPadding:
@@ -165,7 +216,7 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
 
           Expanded(
             child: _points.isEmpty && _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildShimmerList()
                 : _points.isEmpty
                     ? Center(
                         child: Column(
@@ -204,6 +255,7 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
                           final point = _points[index];
                           final hasVoted =
                               _upvoteStates[point.id] ?? false;
+                          final isImported = _isPointImported(point);
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -285,24 +337,24 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
                                     ),
                                     const SizedBox(width: 16),
                                     GestureDetector(
-                                      onTap: () => _importPoint(point),
+                                      onTap: () => isImported ? _removePoint(point) : _importPoint(point),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: DesignTokens.statusSafe,
+                                          color: isImported ? DesignTokens.statusViolation : DesignTokens.statusSafe,
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.add,
+                                            Icon(isImported ? Icons.remove : Icons.add,
                                                 color: Colors.white,
                                                 size: 16),
-                                            SizedBox(width: 4),
-                                            Text('Ekle',
-                                                style: TextStyle(
+                                            const SizedBox(width: 4),
+                                            Text(isImported ? 'Çıkar' : 'Ekle',
+                                                style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 12,
                                                     fontWeight:
@@ -321,6 +373,60 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildShimmerList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: DesignTokens.cardDecoration,
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(width: 120, height: 14, color: Colors.white),
+                        const SizedBox(height: 6),
+                        Container(width: 80, height: 10, color: Colors.white),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(width: double.infinity, height: 40, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: Container(height: 32, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    const SizedBox(width: 16),
+                    Expanded(child: Container(height: 32, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,4 +1,4 @@
-﻿
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -6,6 +6,7 @@ import 'dart:async';
 import '../theme/design_tokens.dart';
 import '../widgets/average_speed_card.dart';
 import '../widgets/metric_card.dart';
+import '../widgets/dashboard_timer_metric.dart';
 import '../widgets/action_button.dart';
 import '../services/location_service.dart';
 import '../services/eds_geofence_service.dart';
@@ -40,7 +41,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
   SpeedStatus _currentStatus = SpeedStatus.safe;
   int _targetSpeed = 82;
   double _totalDistance = 10.0; // Mock total route distance
-  bool _isActive = false; // By default, wait for user to hit BAÅLAT
+  bool _isActive = false; // By default, wait for user to hit BAŞLAT
 
   int _currentLiveSpeed = 0;
   int _averageSpeed = 0;
@@ -55,7 +56,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
   double _lastAnnouncedDistanceKm = 0.0;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  Timer? _uiTimer;
 
   @override
   void initState() {
@@ -67,7 +67,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
 
   @override
   void dispose() {
-    _uiTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _speedSubscription?.cancel();
     super.dispose();
@@ -255,7 +254,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
         _currentStatus = SpeedStatus.safe;
       });
 
-      _uiTimer?.cancel();
+
 
       if (_activeEdsPoint == null && startPoint != null && endPoint != null && distance > 500) {
         _promptSaveCustomEds(startPoint, endPoint, distance);
@@ -267,10 +266,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
         _isActive = true;
         _currentStatus = SpeedStatus.safe;
         _resetTrackingState();
-      });
-      
-      _uiTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) setState(() {});
       });
     }
   }
@@ -542,46 +537,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
   Widget _buildDashboardContent() {
     final double currentDistanceKm = _isActive ? (_currentDistanceMeters / 1000.0) : 0.0;
 
-    String brLabel = 'MAX HEDEF HIZ';
-    String brValue = _isActive ? _targetSpeed.toString() : '0';
-    String brUnit = 'km/s';
-
-    if (_isActive) {
-      if (_activeEdsPoint != null) {
-        final double limit = _activeEdsPoint!.speedLimit.toDouble();
-        final double minTimeHours = _totalDistance / limit;
-        
-        double elapsedHours = 0;
-        if (_trackingStartTime != null) {
-          elapsedHours = DateTime.now().difference(_trackingStartTime!).inSeconds / 3600.0;
-        }
-
-        final double remainingDistance = _totalDistance - currentDistanceKm;
-        final double remainingTime = minTimeHours - elapsedHours;
-
-        if (remainingDistance <= 0 || remainingTime <= 0) {
-          brLabel = 'GÜVENLİ HIZ';
-          brValue = limit.toInt().toString();
-        } else {
-          final double safeSpeed = remainingDistance / remainingTime;
-          brLabel = 'KALAN GÜVENLİ HIZ';
-          brValue = safeSpeed > 130 ? '130+' : safeSpeed.toInt().toString();
-        }
-      } else {
-        brLabel = 'SÜRÜÅ SÜRESİ';
-        brUnit = '';
-        if (_trackingStartTime != null) {
-          final duration = DateTime.now().difference(_trackingStartTime!);
-          final minutes = duration.inMinutes.toString().padLeft(2, '0');
-          final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
-          brValue = '$minutes:$seconds';
-        } else {
-          brValue = '00:00';
-        }
-      }
-    }
-
-
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -616,10 +571,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: MetricCard(
-                    label: brLabel,
-                    valueText: brValue,
-                    unit: brUnit,
+                  child: DashboardTimerMetric(
+                    isActive: _isActive,
+                    activeEdsPoint: _activeEdsPoint,
+                    totalDistance: _isActive ? _totalDistance : 0.0,
+                    currentDistanceMeters: _currentDistanceMeters,
+                    trackingStartTime: _trackingStartTime,
+                    targetSpeed: _targetSpeed,
                   ),
                 ),
               ],

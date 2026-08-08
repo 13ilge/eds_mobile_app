@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,7 +13,6 @@ class AudioService {
 
   DateTime? _lastViolationAnnouncement;
 
-  // Cached SharedPreferences instance — avoids repeated getInstance() calls
   SharedPreferences? _prefs;
 
   AudioService._internal() {
@@ -23,7 +22,6 @@ class AudioService {
 
   AudioMode get currentMode => _currentMode;
 
-  /// Lazily obtain and cache the SharedPreferences instance.
   Future<SharedPreferences> get _preferences async {
     return _prefs ??= await SharedPreferences.getInstance();
   }
@@ -82,7 +80,6 @@ class AudioService {
     if (_currentMode == AudioMode.mute) return;
 
     final now = DateTime.now();
-    // Spam engelleme: En son ihlal duyurusundan bu yana en az 2 dakika geçmeli
     if (_lastViolationAnnouncement != null) {
       final diff = now.difference(_lastViolationAnnouncement!).inSeconds;
       if (diff < 120) return;

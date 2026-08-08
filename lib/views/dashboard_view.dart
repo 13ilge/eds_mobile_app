@@ -1,9 +1,6 @@
-/// EDUCATIONAL NOTE: Views Layer
-/// The 'views' or 'screens' directory contains the top-level UI files.
-/// A View acts as a container that brings together various Widgets and handles the screen's state.
-/// It orchestrates the layout but delegates detailed rendering to smaller modular widgets.
-
+﻿
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import '../theme/design_tokens.dart';
@@ -16,42 +13,45 @@ import '../services/eds_storage_service.dart';
 import '../services/audio_service.dart';
 import '../models/speed_data.dart';
 import '../models/eds_point.dart';
+import '../providers/subscription_provider.dart';
+import '../providers/friends_provider.dart';
+import '../providers/sharing_provider.dart';
 import 'saved_eds_view.dart';
+import 'profile_view.dart';
+import 'paywall_view.dart';
+import 'friends_view.dart';
+import 'inbox_view.dart';
+import 'community_view.dart';
 
-class DashboardView extends StatefulWidget {
+class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
 
   @override
-  State<DashboardView> createState() => _DashboardViewState();
+  ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserver {
+class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindingObserver {
   final LocationService _locationService = LocationService();
   StreamSubscription<SpeedData>? _speedSubscription;
   
-  // Permission State
   bool _hasPermission = false;
   static const String _permissionMessage = "Konum İzni Gerekli\n(İzin vermek için buraya dokunun)";
 
-  // UI / Metric State
   SpeedStatus _currentStatus = SpeedStatus.safe;
   int _targetSpeed = 82;
   double _totalDistance = 10.0; // Mock total route distance
-  bool _isActive = false; // By default, wait for user to hit BAŞLAT
+  bool _isActive = false; // By default, wait for user to hit BAÅLAT
 
-  // Tracking State
   int _currentLiveSpeed = 0;
   int _averageSpeed = 0;
   double _currentDistanceMeters = 0.0;
   DateTime? _trackingStartTime;
   SpeedData? _lastSpeedData;
   
-  // Geofence State
   late final EdsGeofenceService _geofenceService;
   EdsPoint? _activeEdsPoint;
   SpeedData? _manualTrackingStartPoint;
 
-  // Audio State
   double _lastAnnouncedDistanceKm = 0.0;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -102,16 +102,13 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
   }
 
   void _startListeningToGPS() {
-    // F14 fix: Cancel any existing subscription before creating a new one
     _speedSubscription?.cancel();
 
     _speedSubscription = _locationService.getLiveSpeedStream().listen((SpeedData data) {
       if (!mounted) return;
 
-      // --- All computation OUTSIDE setState ---
       final int newLiveSpeed = data.currentSpeed < 1 ? 0 : data.currentSpeed.round();
 
-      // Check for automatic start (only when not active)
       bool didAutoStart = false;
       if (!_isActive) {
         final matchedPoint = _geofenceService.checkAutomaticStart(data);
@@ -139,20 +136,16 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
         _trackingStartTime ??= data.timestamp;
 
         if (_lastSpeedData != null) {
-          // Calculate distance between last point and current point
           final double distanceDelta = Geolocator.distanceBetween(
             _lastSpeedData!.latitude, _lastSpeedData!.longitude,
             data.latitude, data.longitude,
           );
           
-          // Accumulate distance
           newDistance += distanceDelta;
           
-          // Calculate elapsed time
           final int elapsedSeconds = data.timestamp.difference(_trackingStartTime!).inSeconds;
           
           if (elapsedSeconds > 0) {
-            // True Average Speed Formula: Total Distance / Total Time
             final double distanceKm = newDistance / 1000.0;
             final double hours = elapsedSeconds / 3600.0;
             newAverageSpeed = (distanceKm / hours).round();
@@ -161,7 +154,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
         
         _lastSpeedData = data;
 
-        // Status Check
         final SpeedStatus prevStatus = _currentStatus;
 
         if (newAverageSpeed > _targetSpeed + 5) {
@@ -172,7 +164,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
            newStatus = SpeedStatus.safe;
         }
 
-        // --- Audio calls OUTSIDE setState with error handling (F4 fix) ---
         if (newStatus == SpeedStatus.violation) {
           AudioService().speakViolation(); // fire-and-forget with internal try/catch
         } else if (prevStatus == SpeedStatus.violation && newStatus == SpeedStatus.safe) {
@@ -185,7 +176,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
            AudioService().speakMilestone(newAverageSpeed, distanceKm);
         }
 
-        // Check for automatic stop
         bool didAutoStop = false;
         if (_activeEdsPoint != null) {
           if (_geofenceService.checkAutomaticStop(data, _activeEdsPoint!, newDistance)) {
@@ -193,7 +183,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
           }
         }
 
-        // Handle auto-stop (snackbar shown after setState)
         if (didAutoStop) {
           _isActive = false;
           _currentDistanceMeters = newDistance;
@@ -214,14 +203,12 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
 
       }
 
-      // --- Only rebuild if display values actually changed ---
       final bool needsRebuild =
           newLiveSpeed != _currentLiveSpeed ||
           newAverageSpeed != _averageSpeed ||
           newStatus != _currentStatus ||
           didAutoStart;
 
-      // Always update internal state
       _currentLiveSpeed = newLiveSpeed;
       _averageSpeed = newAverageSpeed;
       _currentDistanceMeters = newDistance;
@@ -231,7 +218,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
         setState(() {});
       }
 
-      // Show auto-start snackbar after state update
       if (didAutoStart && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('EDS Bölgesine Girildi: ${_activeEdsPoint!.name}')),
@@ -260,7 +246,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
 
   void _toggleTracking() {
     if (_isActive) {
-      // Stopping
       final endPoint = _lastSpeedData;
       final startPoint = _manualTrackingStartPoint;
       final distance = _currentDistanceMeters;
@@ -272,14 +257,12 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
 
       _uiTimer?.cancel();
 
-      // Show dialog if manually started and distance > 500m
       if (_activeEdsPoint == null && startPoint != null && endPoint != null && distance > 500) {
         _promptSaveCustomEds(startPoint, endPoint, distance);
       } else {
         _resetTrackingState();
       }
     } else {
-      // Starting
       setState(() {
         _isActive = true;
         _currentStatus = SpeedStatus.safe;
@@ -421,12 +404,110 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
                     .then((_) => _geofenceService.reloadPoints());
                 },
               ),
+              const SizedBox(height: 8),
+              _buildDrawerItem(
+                icon: Icons.person_rounded,
+                title: 'Profilim',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileView()));
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildDrawerItemWithBadge(
+                icon: Icons.people_rounded,
+                title: 'Arkadaşlarım',
+                badgeCount: ref.watch(pendingRequestCountProvider),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const FriendsView()));
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildDrawerItemWithBadge(
+                icon: Icons.inbox_rounded,
+                title: 'Gelen Kutusu',
+                badgeCount: ref.watch(incomingShareCountProvider),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const InboxView()));
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildDrawerItem(
+                icon: Icons.public_rounded,
+                title: 'Topluluk',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityView()));
+                },
+              ),
+              const SizedBox(height: 8),
+              if (!ref.watch(isProProvider))
+                _buildDrawerItem(
+                  icon: Icons.workspace_premium,
+                  title: 'Pro\'ya Yükselt',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PaywallView()));
+                  },
+                ),
             ],
           ),
         ),
       ),
       body: SafeArea(
         child: _buildDashboardContent(),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItemWithBadge({
+    required IconData icon,
+    required String title,
+    required int badgeCount,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          child: Row(
+            children: [
+              Icon(icon, color: DesignTokens.textDark, size: 28),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: DesignTokens.textDark,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (badgeCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: DesignTokens.statusViolation,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$badgeCount',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -461,14 +542,12 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
   Widget _buildDashboardContent() {
     final double currentDistanceKm = _isActive ? (_currentDistanceMeters / 1000.0) : 0.0;
 
-    // Dynamic Bottom Right Card Logic
     String brLabel = 'MAX HEDEF HIZ';
     String brValue = _isActive ? _targetSpeed.toString() : '0';
     String brUnit = 'km/s';
 
     if (_isActive) {
       if (_activeEdsPoint != null) {
-        // Known Route
         final double limit = _activeEdsPoint!.speedLimit.toDouble();
         final double minTimeHours = _totalDistance / limit;
         
@@ -489,8 +568,7 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
           brValue = safeSpeed > 130 ? '130+' : safeSpeed.toInt().toString();
         }
       } else {
-        // Unknown Route (Manual)
-        brLabel = 'SÜRÜŞ SÜRESİ';
+        brLabel = 'SÜRÜÅ SÜRESİ';
         brUnit = '';
         if (_trackingStartTime != null) {
           final duration = DateTime.now().difference(_trackingStartTime!);
@@ -510,7 +588,6 @@ class _DashboardViewState extends State<DashboardView> with WidgetsBindingObserv
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Block 1: AverageSpeedCard 
             AverageSpeedCard(
               speed: _isActive ? _averageSpeed : 0, 
               status: _isActive ? _currentStatus : SpeedStatus.safe,

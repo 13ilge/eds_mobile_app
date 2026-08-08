@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "317040695553",
+    "project_id": "eds-mobile-app-80d12",
+    "storage_bucket": "eds-mobile-app-80d12.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:317040695553:android:af13f08af80814edf4a300",
+        "android_client_info": {
+          "package_name": "com.example.eds_mobile_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "317040695553-3udj75i5rkb79vkc06voihlj485rq5oc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.eds_mobile_app",
+            "certificate_hash": "4413e66ffa33610c615a44d7e00b205dc89c212b"
+          }
+        },
+        {
+          "client_id": "317040695553-8gmlfbt2n9s1jcpknmhskm8540q1f34h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyaJUHlmACHllR_gEsJ0Q5-jc_8dLQ0W0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "317040695553-8gmlfbt2n9s1jcpknmhskm8540q1f34h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

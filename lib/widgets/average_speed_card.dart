@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 import '../services/audio_service.dart';
 
@@ -8,7 +8,6 @@ class AverageSpeedCard extends StatelessWidget {
   final double currentDistance;
   final double totalDistance;
   
-  // Permission UX fields
   final bool hasPermission;
   final String statusMessage;
   final VoidCallback onTap;

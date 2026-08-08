@@ -1,29 +1,32 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/eds_point.dart';
 
 class EdsStorageService {
-  static const String _storageKey = 'custom_eds_points';
+  String get _storageKey {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+    return 'custom_eds_points_$uid';
+  }
 
-  // Singleton pattern
   static final EdsStorageService _instance = EdsStorageService._internal();
   factory EdsStorageService() => _instance;
   EdsStorageService._internal();
 
-  // Cached SharedPreferences instance — avoids repeated getInstance() calls
   SharedPreferences? _prefs;
 
-  // In-memory cache of custom points — avoids re-reading/deserializing on every operation
   List<EdsPoint>? _cachedPoints;
 
-  /// Lazily obtain and cache the SharedPreferences instance.
   Future<SharedPreferences> get _preferences async {
     return _prefs ??= await SharedPreferences.getInstance();
   }
 
+  void clearCache() {
+    _cachedPoints = null;
+  }
+
   Future<List<EdsPoint>> loadCustomPoints() async {
-    // Return from in-memory cache if available
     if (_cachedPoints != null) {
       return List.from(_cachedPoints!);
     }
@@ -48,7 +51,6 @@ class EdsStorageService {
   }
 
   Future<void> saveCustomPoint(EdsPoint point) async {
-    // Ensure cache is populated
     final points = await loadCustomPoints();
     final index = points.indexWhere((p) => p.id == point.id);
     if (index >= 0) {
@@ -56,21 +58,17 @@ class EdsStorageService {
     } else {
       points.add(point); // Insert
     }
-    // Update in-memory cache
     _cachedPoints = List.from(points);
     await _persistPoints(points);
   }
 
   Future<void> deleteCustomPoint(String id) async {
-    // Ensure cache is populated
     final points = await loadCustomPoints();
     points.removeWhere((point) => point.id == id);
-    // Update in-memory cache
     _cachedPoints = List.from(points);
     await _persistPoints(points);
   }
 
-  /// Persist points to SharedPreferences using the cached instance.
   Future<void> _persistPoints(List<EdsPoint> points) async {
     final prefs = await _preferences;
     final String jsonString = jsonEncode(points.map((p) => p.toJson()).toList());

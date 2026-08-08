@@ -1,4 +1,4 @@
-class EdsPoint {
+﻿class EdsPoint {
   final String id;
   final String name;
   final double startLatitude;

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/design_tokens.dart';
 
 class ActionButton extends StatelessWidget {
@@ -21,7 +21,7 @@ class ActionButton extends StatelessWidget {
         
     final Color textColor = DesignTokens.cardSurface;
 
-    final String buttonText = isActive ? 'BİTİR / SIFIRLA' : 'BAŞLAT';
+    final String buttonText = isActive ? 'BİTİR / SIFIRLA' : 'BAÅLAT';
     final height = MediaQuery.of(context).size.height * 0.13;
     final clampedHeight = height < 64.0 ? 64.0 : height;
 

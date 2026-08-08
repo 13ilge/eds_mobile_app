@@ -1,21 +1,22 @@
-/// EDUCATIONAL NOTE: Application Entry Point
-/// In a clean architecture, main.dart is strictly used for application initialization.
-/// It acts as the root, setting up dependencies, themes, and global configurations.
-/// It delegates the actual UI rendering to the View layer (e.g., DashboardView), 
-/// keeping the entry point minimal and focused.
-
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'theme/design_tokens.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'views/dashboard_view.dart';
+import 'views/auth_view.dart';
+import 'providers/auth_provider.dart';
+import 'theme/design_tokens.dart';
+import 'services/subscription_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-  ]);
-  
+
+  await Firebase.initializeApp();
+
+  await SubscriptionService().init();
+
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -23,14 +24,16 @@ void main() {
     ),
   );
 
-  runApp(const KoridorApp());
+  runApp(const ProviderScope(child: KoridorApp()));
 }
 
-class KoridorApp extends StatelessWidget {
+class KoridorApp extends ConsumerWidget {
   const KoridorApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
     return MaterialApp(
       title: 'Koridor Hız Asistanı',
       debugShowCheckedModeBanner: false,
@@ -39,8 +42,20 @@ class KoridorApp extends StatelessWidget {
         fontFamily: 'Inter',
         useMaterial3: true,
       ),
-      // Clean delegation to the Views layer
-      home: const DashboardView(),
+      home: authState.when(
+        data: (user) {
+          if (user == null) {
+            return const AuthView();
+          }
+          return const DashboardView();
+        },
+        loading: () => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+        error: (err, stack) => Scaffold(
+          body: Center(child: Text('Hata: $err')),
+        ),
+      ),
     );
   }
 }

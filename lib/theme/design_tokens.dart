@@ -1,19 +1,24 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 enum SpeedStatus { safe, warning, violation }
 
 class DesignTokens {
-  // Colors
   static const Color background = Color(0xFFF4F6F8);
   static const Color cardSurface = Color(0xFFFFFFFF);
   static const Color textDark = Color(0xFF1A1D1F);
   static const Color textGrey = Color(0xFF6B7280);
+  static const Color primaryBlue = Color(0xFF3B82F6);
+  
+  static const Color textPrimary = textDark;
+  static const Color textSecondary = textGrey;
+  static const Color surface = background;
+  static const Color cardBackground = cardSurface;
+  static const Color cardBorder = Color(0xFFE5E7EB);
   
   static const Color statusSafe = Color(0xFF10B981);
   static const Color statusWarning = Color(0xFFF59E0B);
   static const Color statusViolation = Color(0xFFEF4444);
 
-  // Helper method for status colors
   static Color getStatusColor(SpeedStatus status) {
     switch (status) {
       case SpeedStatus.safe:
@@ -25,7 +30,6 @@ class DesignTokens {
     }
   }
 
-  // Typography
   static const TextStyle labelSmall = TextStyle(
     fontSize: 12,
     fontWeight: FontWeight.w600,

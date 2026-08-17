@@ -132,6 +132,8 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                   _buildFeatureItem(Icons.map, 'Sınırsız Özel EDS Noktası Kaydı'),
                   const SizedBox(height: 16),
                   _buildFeatureItem(Icons.headset, 'Gelişmiş Sesli Asistan Modları'),
+                  const SizedBox(height: 16),
+                  _buildFeatureItem(Icons.analytics_rounded, 'Detaylı Sürüş Skoru Analizi'),
                   const Spacer(),
 
                   if (_isLoading)

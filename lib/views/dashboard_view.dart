@@ -8,15 +8,19 @@ import '../widgets/average_speed_card.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/dashboard_timer_metric.dart';
 import '../widgets/action_button.dart';
+import '../widgets/score_result_card.dart';
 import '../services/location_service.dart';
 import '../services/eds_geofence_service.dart';
 import '../services/eds_storage_service.dart';
 import '../services/audio_service.dart';
+import '../services/driving_score_service.dart';
 import '../models/speed_data.dart';
 import '../models/eds_point.dart';
+import '../models/driving_score.dart';
 import '../providers/subscription_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/sharing_provider.dart';
+import '../providers/driving_score_provider.dart';
 import 'saved_eds_view.dart';
 import 'profile_view.dart';
 import 'paywall_view.dart';
@@ -54,6 +58,15 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
   SpeedData? _manualTrackingStartPoint;
 
   double _lastAnnouncedDistanceKm = 0.0;
+
+  // --- Sürüş Skor Sayaçları (setState DIŞINDA güncellenir) ---
+  int _violationSeconds = 0;
+  int _harshEventCount = 0;
+  double _previousTickSpeed = 0.0;
+  DateTime? _previousTickTime;
+
+  static const double _harshThreshold = 15.0; // km/h — ardışık tick arası fark eşiği
+  static const int _minSessionSeconds = 30; // Minimum seans süresi (skor hesaplama için)
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -153,6 +166,24 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
         
         _lastSpeedData = data;
 
+        // --- Skor sayaç güncellemeleri (setState DIŞINDA) ---
+        // Violation süre sayacı
+        if (newStatus == SpeedStatus.violation && _previousTickTime != null) {
+          final tickDelta = data.timestamp.difference(_previousTickTime!).inSeconds;
+          _violationSeconds += tickDelta;
+        }
+
+        // Harsh event algılama (ani hızlanma/fren)
+        if (_previousTickSpeed > 0 && newLiveSpeed > 0) {
+          final speedDelta = (newLiveSpeed - _previousTickSpeed).abs().toDouble();
+          if (speedDelta > _harshThreshold) {
+            _harshEventCount++;
+          }
+        }
+
+        _previousTickSpeed = newLiveSpeed.toDouble();
+        _previousTickTime = data.timestamp;
+
         final SpeedStatus prevStatus = _currentStatus;
 
         if (newAverageSpeed > _targetSpeed + 5) {
@@ -188,7 +219,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
           _currentStatus = newStatus;
           _averageSpeed = newAverageSpeed;
           _currentLiveSpeed = newLiveSpeed;
-          _resetTrackingState();
+
+          // Skor hesapla ve göster (resetTrackingState ÖNCE)
+          _handleSessionEnd(edsPointName: _activeEdsPoint?.name);
 
           setState(() {});
 
@@ -233,6 +266,79 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
     _activeEdsPoint = null;
     _manualTrackingStartPoint = null;
     _lastAnnouncedDistanceKm = 0.0;
+    // Skor sayaçlarını sıfırla
+    _violationSeconds = 0;
+    _harshEventCount = 0;
+    _previousTickSpeed = 0.0;
+    _previousTickTime = null;
+  }
+
+  /// Seans bittiğinde skor hesaplar, kaydeder, TTS ile okur ve diyalog gösterir.
+  /// _resetTrackingState() bu metodun içinde çağrılır.
+  void _handleSessionEnd({String? edsPointName}) {
+    final totalSeconds = _trackingStartTime != null
+        ? DateTime.now().difference(_trackingStartTime!).inSeconds
+        : 0;
+
+    // Minimum seans kontrolü — çok kısa seanslar için skor gösterme
+    if (totalSeconds < _minSessionSeconds) {
+      _resetTrackingState();
+      return;
+    }
+
+    // Pure function çağrısı — side effect yok
+    final scoreValue = DrivingScoreService.calculateScore(
+      totalSessionSeconds: totalSeconds,
+      violationSeconds: _violationSeconds,
+      averageSpeed: _averageSpeed,
+      targetSpeed: _targetSpeed,
+      harshEventCount: _harshEventCount,
+    );
+
+    // Bileşen ratio'larını hesapla
+    final complianceRatio = (1.0 - (_violationSeconds / totalSeconds)).clamp(0.0, 1.0);
+    final speedAccuracy = (1.0 - ((_averageSpeed - _targetSpeed).abs() / _targetSpeed)).clamp(0.0, 1.0);
+    final smoothness = (1.0 - (_harshEventCount / DrivingScoreService.defaultExpectedMaxEvents)).clamp(0.0, 1.0);
+
+    final drivingScore = DrivingScore(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      sessionDate: DateTime.now(),
+      score: scoreValue,
+      complianceRatio: complianceRatio,
+      speedAccuracy: speedAccuracy,
+      smoothness: smoothness,
+      durationSeconds: totalSeconds,
+      distanceKm: _currentDistanceMeters / 1000.0,
+      averageSpeed: _averageSpeed,
+      targetSpeed: _targetSpeed,
+      edsPointName: edsPointName,
+    );
+
+    // Riverpod üzerinden kaydet
+    ref.read(drivingScoreListProvider.notifier).addScore(drivingScore);
+
+    // TTS ile skoru oku (fire-and-forget, setState DIŞINDA)
+    AudioService().speakScore(scoreValue);
+
+    // Skor diyaloğunu göster
+    _showScoreDialog(drivingScore);
+
+    // Sayaçları sıfırla
+    _resetTrackingState();
+  }
+
+  void _showScoreDialog(DrivingScore score) {
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      builder: (context) => ScoreResultCard(
+        score: score,
+        onDismiss: () => Navigator.pop(context),
+      ),
+    );
   }
 
   Future<void> _handleHeroCardTap() async {
@@ -248,18 +354,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
       final endPoint = _lastSpeedData;
       final startPoint = _manualTrackingStartPoint;
       final distance = _currentDistanceMeters;
-      
+      final edsPointName = _activeEdsPoint?.name;
+      final wasAutoEds = _activeEdsPoint != null;
+
       setState(() {
         _isActive = false;
         _currentStatus = SpeedStatus.safe;
       });
 
+      // Skor hesapla ve göster
+      _handleSessionEnd(edsPointName: edsPointName);
 
-
-      if (_activeEdsPoint == null && startPoint != null && endPoint != null && distance > 500) {
+      if (!wasAutoEds && startPoint != null && endPoint != null && distance > 500) {
         _promptSaveCustomEds(startPoint, endPoint, distance);
-      } else {
-        _resetTrackingState();
       }
     } else {
       setState(() {

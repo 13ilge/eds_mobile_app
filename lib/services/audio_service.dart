@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -114,6 +114,27 @@ class AudioService {
       await _flutterTts.speak("Ortalama hızınız $averageSpeed.");
     } catch (e) {
       debugPrint('TTS speak (milestone) failed: $e');
+    }
+  }
+
+  /// Seans sonunda sürüş skorunu sesli olarak okur.
+  /// Mute modunda çalışmaz. fire-and-forget, try/catch ile sarılı.
+  Future<void> speakScore(int score) async {
+    if (_currentMode == AudioMode.mute) return;
+    try {
+      String message;
+      if (score >= 90) {
+        message = "Sürüş puanınız $score. Mükemmel bir sürüş yaptınız, tebrikler.";
+      } else if (score >= 70) {
+        message = "Sürüş puanınız $score. İyi bir sürüş yaptınız.";
+      } else if (score >= 50) {
+        message = "Sürüş puanınız $score. Hızınıza biraz daha dikkat edin.";
+      } else {
+        message = "Sürüş puanınız $score. Lütfen hız limitine uyun.";
+      }
+      await _flutterTts.speak(message);
+    } catch (e) {
+      debugPrint('TTS speak (score) failed: $e');
     }
   }
 }

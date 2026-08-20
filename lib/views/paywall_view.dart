@@ -100,7 +100,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
                   const Icon(
                     Icons.workspace_premium,
                     size: 80,
@@ -125,7 +125,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                       color: DesignTokens.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 24),
 
                   _buildFeatureItem(Icons.cloud_sync, 'Topluluk Rotalarını İndirme'),
                   const SizedBox(height: 16),

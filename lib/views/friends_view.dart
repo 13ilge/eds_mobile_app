@@ -5,6 +5,7 @@ import '../providers/auth_provider.dart';
 import '../providers/friends_provider.dart';
 import '../providers/subscription_provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/design_tokens.dart';
 import 'paywall_view.dart';
 
@@ -22,7 +23,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -234,6 +235,8 @@ class _FriendsViewState extends ConsumerState<FriendsView>
           labelColor: DesignTokens.primaryBlue,
           unselectedLabelColor: DesignTokens.textGrey,
           indicatorColor: DesignTokens.primaryBlue,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: [
             const Tab(text: 'Arkadaşlarım'),
             Tab(
@@ -262,6 +265,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                 ],
               ),
             ),
+            const Tab(text: 'Sıralama'),
           ],
         ),
       ),
@@ -277,10 +281,121 @@ class _FriendsViewState extends ConsumerState<FriendsView>
         children: [
           _buildFriendsTab(),
           _buildPendingTab(),
+          _buildLeaderboardTab(),
         ],
       ),
     );
   }
+
+  Widget _buildLeaderboardTab() {
+    final friendsAsync = ref.watch(friendsListProvider);
+    final myUid = ref.watch(currentUserUidProvider) ?? '';
+    
+    return friendsAsync.when(
+      data: (friends) {
+        final friendUids = friends.map((f) => f.friendUidFor(myUid)).toSet();
+        friendUids.add(myUid); // Kendimizi de ekleyelim
+        
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .orderBy('averageScore', descending: true)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Hata: ${snapshot.error}'));
+            }
+
+            final allDocs = snapshot.data?.docs ?? [];
+            // Sadece arkadaşları ve kendimizi filtrele
+            final docs = allDocs.where((doc) => friendUids.contains(doc.id)).toList();
+            
+            if (docs.isEmpty) {
+              return const Center(child: Text('Liderlik tablosu henüz boş.'));
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: docs.length,
+              itemBuilder: (context, index) {
+                final doc = docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                final isCurrentUser = doc.id == myUid;
+                
+                final displayName = data['displayName'] ?? '';
+                final averageScore = (data['averageScore'] ?? 0.0).toDouble();
+                final displayedBadges = List<String>.from(data['displayedBadges'] ?? []);
+                final earnedBadges = Map<String, String>.from(data['earnedBadges'] ?? {});
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: DesignTokens.cardDecoration.copyWith(
+                    border: isCurrentUser ? Border.all(color: DesignTokens.primaryBlue, width: 2) : null,
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: index < 3 ? DesignTokens.primaryBlue.withOpacity(0.2) : Colors.grey.shade200,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: index < 3 ? DesignTokens.primaryBlue : DesignTokens.textGrey,
+                        ),
+                      ),
+                    ),
+                    title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Row(
+                      children: displayedBadges.map((badgeId) {
+                        if (!earnedBadges.containsKey(badgeId)) return const SizedBox();
+                        
+                        // Icon mapping
+                        IconData icon;
+                        switch (badgeId) {
+                          case 'compliance': icon = Icons.verified_user_rounded; break;
+                          case 'accuracy': icon = Icons.radar_rounded; break;
+                          case 'smoothness': icon = Icons.eco_rounded; break;
+                          case 'master': icon = Icons.workspace_premium_rounded; break;
+                          default: icon = Icons.star;
+                        }
+                        
+                        // Color mapping
+                        Color color;
+                        switch (earnedBadges[badgeId]) {
+                          case 'bronze': color = const Color(0xFFCD7F32); break;
+                          case 'silver': color = const Color(0xFFC0C0C0); break;
+                          case 'gold': color = const Color(0xFFFFD700); break;
+                          default: color = DesignTokens.textGrey;
+                        }
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 4, top: 4),
+                          child: Icon(icon, size: 16, color: color),
+                        );
+                      }).toList(),
+                    ),
+                    trailing: Text(
+                      averageScore.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: DesignTokens.primaryBlue,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Hata: $err')),
+    );
+  }
+
 
   Widget _buildFriendsTab() {
     final friendsAsync = ref.watch(friendsListProvider);

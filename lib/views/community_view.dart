@@ -4,7 +4,10 @@ import 'package:shimmer/shimmer.dart';
 import '../models/community_point.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/eds_point.dart';
+import '../models/user_profile.dart';
+import '../models/badge_model.dart';
 import '../providers/sharing_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/eds_storage_service.dart';
 import '../services/eds_geofence_service.dart';
 import '../theme/design_tokens.dart';
@@ -69,7 +72,6 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
       final newPoints = result['points'] as List<CommunityPoint>;
       _lastDoc = result['lastDoc'] as DocumentSnapshot?;
 
-      // Parallel fetch instead of sequential N+1 reads (F1 optimization)
       final voteResults = await Future.wait(
         newPoints.map((point) => service.hasUpvoted(point.id)),
       );
@@ -173,205 +175,268 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignTokens.background,
-      appBar: AppBar(
-        backgroundColor: DesignTokens.background,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text('Topluluk',
-            style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: DropdownButtonFormField<String>(
-              value: _selectedRegion,
-              decoration: InputDecoration(
-                labelText: 'Şehir',
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                filled: true,
-                fillColor: DesignTokens.cardSurface,
-              ),
-              items: _regions.map((r) {
-                return DropdownMenuItem(
-                  value: r.toLowerCase(),
-                  child: Text(r),
-                );
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) {
-                  setState(() => _selectedRegion = val);
-                  _loadPoints(reset: true);
-                }
-              },
+  Widget _buildPointsTab() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: DropdownButtonFormField<String>(
+            value: _selectedRegion,
+            decoration: InputDecoration(
+              labelText: 'Şehir',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              filled: true,
+              fillColor: DesignTokens.cardSurface,
             ),
+            items: _regions.map((r) {
+              return DropdownMenuItem(value: r.toLowerCase(), child: Text(r));
+            }).toList(),
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedRegion = val);
+                _loadPoints(reset: true);
+              }
+            },
           ),
-
-          Expanded(
-            child: _points.isEmpty && _isLoading
-                ? _buildShimmerList()
-                : _points.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.public_off,
-                                size: 64,
-                                color: DesignTokens.textGrey.withValues(alpha: 0.5)),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Bu şehirde henüz paylaşım yok',
-                              style: TextStyle(
-                                  color: DesignTokens.textGrey, fontSize: 16),
+        ),
+        Expanded(
+          child: _points.isEmpty && _isLoading
+              ? _buildShimmerList()
+              : _points.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.public_off, size: 64, color: DesignTokens.textGrey.withValues(alpha: 0.5)),
+                          const SizedBox(height: 16),
+                          const Text('Bu şehirde henüz paylaşım yok', style: TextStyle(color: DesignTokens.textGrey, fontSize: 16)),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _points.length + (_hasMore ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _points.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: _isLoading
+                                  ? const CircularProgressIndicator()
+                                  : OutlinedButton(
+                                      onPressed: _loadPoints,
+                                      child: const Text('Daha Fazla Yükle'),
+                                    ),
                             ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _points.length + (_hasMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == _points.length) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              child: Center(
-                                child: _isLoading
-                                    ? const CircularProgressIndicator()
-                                    : OutlinedButton(
-                                        onPressed: _loadPoints,
-                                        child: const Text('Daha Fazla Yükle'),
-                                      ),
+                          );
+                        }
+
+                        final point = _points[index];
+                        final hasVoted = _upvoteStates[point.id] ?? false;
+                        final isImported = _isPointImported(point);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: DesignTokens.cardDecoration,
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: DesignTokens.primaryBlue, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      point.edsPoint.name,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, color: DesignTokens.textDark, fontSize: 15),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: DesignTokens.primaryBlue.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      '${point.edsPoint.speedLimit} km/h',
+                                      style: const TextStyle(color: DesignTokens.primaryBlue, fontSize: 12, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            );
-                          }
-
-                          final point = _points[index];
-                          final hasVoted =
-                              _upvoteStates[point.id] ?? false;
-                          final isImported = _isPointImported(point);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: DesignTokens.cardDecoration,
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.location_on,
-                                        color: DesignTokens.primaryBlue,
-                                        size: 20),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        point.edsPoint.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: DesignTokens.textDark,
-                                            fontSize: 15),
-                                      ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Paylaşan: ${point.ownerName}',
+                                    style: const TextStyle(color: DesignTokens.textGrey, fontSize: 12),
+                                  ),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () => _toggleUpvote(point),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          hasVoted ? Icons.thumb_up : Icons.thumb_up_outlined,
+                                          color: hasVoted ? DesignTokens.primaryBlue : DesignTokens.textGrey,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${point.upvotes}',
+                                          style: TextStyle(
+                                            color: hasVoted ? DesignTokens.primaryBlue : DesignTokens.textGrey,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  GestureDetector(
+                                    onTap: () => isImported ? _removePoint(point) : _importPoint(point),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: DesignTokens.primaryBlue
-                                            .withValues(alpha: 0.1),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        color: isImported ? DesignTokens.statusViolation : DesignTokens.statusSafe,
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      child: Text(
-                                        '${point.edsPoint.speedLimit} km/h',
-                                        style: const TextStyle(
-                                            color: DesignTokens.primaryBlue,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Paylaşan: ${point.ownerName}',
-                                      style: const TextStyle(
-                                          color: DesignTokens.textGrey,
-                                          fontSize: 12),
-                                    ),
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTap: () => _toggleUpvote(point),
                                       child: Row(
+                                        mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Icon(
-                                            hasVoted
-                                                ? Icons.thumb_up
-                                                : Icons.thumb_up_outlined,
-                                            color: hasVoted
-                                                ? DesignTokens.primaryBlue
-                                                : DesignTokens.textGrey,
-                                            size: 18,
-                                          ),
+                                          Icon(isImported ? Icons.remove : Icons.add, color: Colors.white, size: 16),
                                           const SizedBox(width: 4),
-                                          Text(
-                                            '${point.upvotes}',
-                                            style: TextStyle(
-                                              color: hasVoted
-                                                  ? DesignTokens.primaryBlue
-                                                  : DesignTokens.textGrey,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 13,
-                                            ),
-                                          ),
+                                          Text(isImported ? 'Çıkar' : 'Ekle',
+                                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 16),
-                                    GestureDetector(
-                                      onTap: () => isImported ? _removePoint(point) : _importPoint(point),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: isImported ? DesignTokens.statusViolation : DesignTokens.statusSafe,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(isImported ? Icons.remove : Icons.add,
-                                                color: Colors.white,
-                                                size: 16),
-                                            const SizedBox(width: 4),
-                                            Text(isImported ? 'Çıkar' : 'Ekle',
-                                                style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 12,
-                                                    fontWeight:
-                                                        FontWeight.bold)),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLeaderboardTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .where('isLeaderboardHidden', isEqualTo: false)
+          .orderBy('averageScore', descending: true)
+          .limit(50)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Center(child: Text('Liderlik tablosu henüz boş.'));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final doc = docs[index];
+            final profile = UserProfile.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>);
+            final isCurrentUser = profile.uid == ref.watch(currentUserUidProvider);
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: DesignTokens.cardDecoration.copyWith(
+                border: isCurrentUser ? Border.all(color: DesignTokens.primaryBlue, width: 2) : null,
+              ),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: index < 3 ? DesignTokens.primaryBlue.withValues(alpha: 0.2) : Colors.grey.shade200,
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: index < 3 ? DesignTokens.primaryBlue : DesignTokens.textGrey,
+                    ),
+                  ),
+                ),
+                title: Text(profile.displayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Row(
+                  children: profile.displayedBadges.map((badgeId) {
+                    final isEarned = profile.earnedBadges.containsKey(badgeId);
+                    if (!isEarned) return const SizedBox();
+                    
+                    BadgeType type;
+                    try {
+                      type = BadgeType.values.firstWhere((e) => e.name == badgeId);
+                    } catch (_) {
+                      return const SizedBox();
+                    }
+                    
+                    final tier = BadgeModel.getTierFromString(profile.earnedBadges[badgeId]!);
+                    final model = BadgeModel(id: badgeId, name: '', type: type, tier: tier);
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4, top: 4),
+                      child: Icon(model.icon, size: 16, color: model.tierColor),
+                    );
+                  }).toList(),
+                ),
+                trailing: Text(
+                  profile.averageScore.toStringAsFixed(1),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: DesignTokens.primaryBlue,
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: DesignTokens.background,
+        appBar: AppBar(
+          backgroundColor: DesignTokens.background,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text('Topluluk', style: TextStyle(fontWeight: FontWeight.w600)),
+          bottom: const TabBar(
+            labelColor: DesignTokens.primaryBlue,
+            unselectedLabelColor: DesignTokens.textGrey,
+            indicatorColor: DesignTokens.primaryBlue,
+            tabs: [
+              Tab(text: 'Noktalar'),
+              Tab(text: 'Sıralama'),
+            ],
           ),
-        ],
+        ),
+        body: TabBarView(
+          children: [
+            _buildPointsTab(),
+            _buildLeaderboardTab(),
+          ],
+        ),
       ),
     );
   }

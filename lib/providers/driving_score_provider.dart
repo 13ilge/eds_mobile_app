@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import '../models/driving_score.dart';
 import '../services/driving_score_service.dart';
 import 'subscription_provider.dart';
 
+import '../services/badge_service.dart';
+import 'auth_provider.dart';
+
 class DrivingScoreNotifier extends StateNotifier<List<DrivingScore>> {
-  DrivingScoreNotifier() : super([]) {
+  final Ref ref;
+  DrivingScoreNotifier(this.ref) : super([]) {
     _loadScores();
   }
 
@@ -15,12 +20,23 @@ class DrivingScoreNotifier extends StateNotifier<List<DrivingScore>> {
   Future<void> addScore(DrivingScore score) async {
     await DrivingScoreService().saveScore(score);
     await _loadScores();
+    
+    // Phase 3: Gamification Sync
+    final avgScore = DrivingScoreService().getAverageScore(state);
+    final earnedBadges = BadgeService.evaluateBadges(state);
+    final totalSessions = state.length;
+    
+    try {
+      await ref.read(authServiceProvider).updateGamification(avgScore, totalSessions, earnedBadges);
+    } catch (e) {
+      debugPrint('Failed to sync gamification: $e');
+    }
   }
 }
 
 final drivingScoreListProvider =
     StateNotifierProvider<DrivingScoreNotifier, List<DrivingScore>>((ref) {
-  return DrivingScoreNotifier();
+  return DrivingScoreNotifier(ref);
 });
 
 final lastScoreProvider = Provider<DrivingScore?>((ref) {

@@ -141,4 +141,33 @@ class AuthService {
       await EdsGeofenceService().reloadPoints();
     }
   }
+
+  Future<void> updateGamification(double averageScore, int totalSessions, Map<String, String> earnedBadges) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'averageScore': averageScore,
+        'totalSessions': totalSessions,
+        'earnedBadges': earnedBadges,
+      });
+    }
+  }
+
+  Future<void> updateDisplayedBadges(List<String> badges) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'displayedBadges': badges,
+      });
+    }
+  }
+
+  Future<void> updateLeaderboardPrivacy(bool isHidden) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore.collection('users').doc(user.uid).update({
+        'isLeaderboardHidden': isHidden,
+      });
+    }
+  }
 }

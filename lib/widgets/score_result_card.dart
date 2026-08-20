@@ -23,13 +23,6 @@ class ScoreResultCard extends ConsumerWidget {
     return 'Lütfen hız limitine uyun.';
   }
 
-  String _getScoreEmoji(int score) {
-    if (score >= 90) return '🏆';
-    if (score >= 70) return '👍';
-    if (score >= 50) return '⚠️';
-    return '🚨';
-  }
-
   String _formatDuration(int seconds) {
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
@@ -124,7 +117,7 @@ class ScoreResultCard extends ConsumerWidget {
 
           // Skor mesajı
           Text(
-            '${_getScoreEmoji(score.score)} ${_getScoreMessage(score.score)}',
+            '${_getScoreMessage(score.score)}',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -263,7 +256,6 @@ class ScoreResultCard extends ConsumerWidget {
     );
   }
 
-  /// Free kullanıcılar için Pro yükseltme CTA'sı.
   Widget _buildProGate(BuildContext context) {
     return InkWell(
       onTap: () {

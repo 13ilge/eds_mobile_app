@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,49 +26,46 @@ import 'paywall_view.dart';
 import 'friends_view.dart';
 import 'inbox_view.dart';
 import 'community_view.dart';
+import 'score_history_view.dart';
 
 class DashboardView extends ConsumerStatefulWidget {
   const DashboardView({super.key});
-
   @override
   ConsumerState<DashboardView> createState() => _DashboardViewState();
 }
 
-class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindingObserver {
+class _DashboardViewState extends ConsumerState<DashboardView>
+    with WidgetsBindingObserver {
   final LocationService _locationService = LocationService();
   StreamSubscription<SpeedData>? _speedSubscription;
-  
-  bool _hasPermission = false;
-  static const String _permissionMessage = "Konum İzni Gerekli\n(İzin vermek için buraya dokunun)";
 
+  bool _hasPermission = false;
+  static const String _permissionMessage =
+      "Konum İzni Gerekli\n(İzin vermek için buraya dokunun)";
   SpeedStatus _currentStatus = SpeedStatus.safe;
   int _targetSpeed = 82;
   double _totalDistance = 10.0; // Mock total route distance
   bool _isActive = false; // By default, wait for user to hit BAŞLAT
-
   int _currentLiveSpeed = 0;
   int _averageSpeed = 0;
   double _currentDistanceMeters = 0.0;
   DateTime? _trackingStartTime;
   SpeedData? _lastSpeedData;
-  
+
   late final EdsGeofenceService _geofenceService;
   EdsPoint? _activeEdsPoint;
   SpeedData? _manualTrackingStartPoint;
-
   double _lastAnnouncedDistanceKm = 0.0;
-
   // --- Sürüş Skor Sayaçları (setState DIŞINDA güncellenir) ---
   int _violationSeconds = 0;
   int _harshEventCount = 0;
   double _previousTickSpeed = 0.0;
   DateTime? _previousTickTime;
-
-  static const double _harshThreshold = 15.0; // km/h — ardışık tick arası fark eşiği
-  static const int _minSessionSeconds = 30; // Minimum seans süresi (skor hesaplama için)
-
+  static const double _harshThreshold =
+      15.0; // km/h — ardışık tick arası fark eşiği
+  static const int _minSessionSeconds =
+      30; // Minimum seans süresi (skor hesaplama için)
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -99,7 +95,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
         setState(() {
           _hasPermission = hasPermission;
         });
-        
+
         if (hasPermission && _speedSubscription == null) {
           _startListeningToGPS();
         }
@@ -115,12 +111,13 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
 
   void _startListeningToGPS() {
     _speedSubscription?.cancel();
-
-    _speedSubscription = _locationService.getLiveSpeedStream().listen((SpeedData data) {
+    _speedSubscription = _locationService.getLiveSpeedStream().listen((
+      SpeedData data,
+    ) {
       if (!mounted) return;
-
-      final int newLiveSpeed = data.currentSpeed < 1 ? 0 : data.currentSpeed.round();
-
+      final int newLiveSpeed = data.currentSpeed < 1
+          ? 0
+          : data.currentSpeed.round();
       bool didAutoStart = false;
       if (!_isActive) {
         final matchedPoint = _geofenceService.checkAutomaticStart(data);
@@ -128,131 +125,133 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
           _isActive = true;
           _activeEdsPoint = matchedPoint;
           _targetSpeed = matchedPoint.speedLimit;
-          _totalDistance = Geolocator.distanceBetween(
-            matchedPoint.startLatitude, matchedPoint.startLongitude,
-            matchedPoint.endLatitude, matchedPoint.endLongitude,
-          ) / 1000.0;
+          _totalDistance =
+              Geolocator.distanceBetween(
+                matchedPoint.startLatitude,
+                matchedPoint.startLongitude,
+                matchedPoint.endLatitude,
+                matchedPoint.endLongitude,
+              ) /
+              1000.0;
           didAutoStart = true;
         }
       }
-
       int newAverageSpeed = _averageSpeed;
       double newDistance = _currentDistanceMeters;
       SpeedStatus newStatus = _currentStatus;
-
       if (_isActive) {
         if (_manualTrackingStartPoint == null && _activeEdsPoint == null) {
           _manualTrackingStartPoint = data;
         }
-        
-        _trackingStartTime ??= data.timestamp;
 
+        _trackingStartTime ??= data.timestamp;
         if (_lastSpeedData != null) {
           final double distanceDelta = Geolocator.distanceBetween(
-            _lastSpeedData!.latitude, _lastSpeedData!.longitude,
-            data.latitude, data.longitude,
+            _lastSpeedData!.latitude,
+            _lastSpeedData!.longitude,
+            data.latitude,
+            data.longitude,
           );
-          
+
           newDistance += distanceDelta;
-          
-          final int elapsedSeconds = data.timestamp.difference(_trackingStartTime!).inSeconds;
-          
+
+          final int elapsedSeconds = data.timestamp
+              .difference(_trackingStartTime!)
+              .inSeconds;
+
           if (elapsedSeconds > 0) {
             final double distanceKm = newDistance / 1000.0;
             final double hours = elapsedSeconds / 3600.0;
             newAverageSpeed = (distanceKm / hours).round();
           }
         }
-        
-        _lastSpeedData = data;
 
+        _lastSpeedData = data;
         // --- Skor sayaç güncellemeleri (setState DIŞINDA) ---
         // Violation süre sayacı
         if (newStatus == SpeedStatus.violation && _previousTickTime != null) {
-          final tickDelta = data.timestamp.difference(_previousTickTime!).inSeconds;
+          final tickDelta = data.timestamp
+              .difference(_previousTickTime!)
+              .inSeconds;
           _violationSeconds += tickDelta;
         }
-
         // Harsh event algılama (ani hızlanma/fren)
         if (_previousTickSpeed > 0 && newLiveSpeed > 0) {
-          final speedDelta = (newLiveSpeed - _previousTickSpeed).abs().toDouble();
+          final speedDelta = (newLiveSpeed - _previousTickSpeed)
+              .abs()
+              .toDouble();
           if (speedDelta > _harshThreshold) {
             _harshEventCount++;
           }
         }
-
         _previousTickSpeed = newLiveSpeed.toDouble();
         _previousTickTime = data.timestamp;
-
         final SpeedStatus prevStatus = _currentStatus;
-
         if (newAverageSpeed > _targetSpeed + 5) {
-           newStatus = SpeedStatus.violation;
+          newStatus = SpeedStatus.violation;
         } else if (newAverageSpeed > _targetSpeed) {
-           newStatus = SpeedStatus.warning;
+          newStatus = SpeedStatus.warning;
         } else {
-           newStatus = SpeedStatus.safe;
+          newStatus = SpeedStatus.safe;
         }
-
         if (newStatus == SpeedStatus.violation) {
-          AudioService().speakViolation(); // fire-and-forget with internal try/catch
-        } else if (prevStatus == SpeedStatus.violation && newStatus == SpeedStatus.safe) {
+          AudioService()
+              .speakViolation(); // fire-and-forget with internal try/catch
+        } else if (prevStatus == SpeedStatus.violation &&
+            newStatus == SpeedStatus.safe) {
           AudioService().speakSafe();
         }
-
         final double distanceKm = newDistance / 1000.0;
         if (distanceKm - _lastAnnouncedDistanceKm >= 5.0) {
-           _lastAnnouncedDistanceKm = distanceKm;
-           AudioService().speakMilestone(newAverageSpeed, distanceKm);
+          _lastAnnouncedDistanceKm = distanceKm;
+          AudioService().speakMilestone(newAverageSpeed, distanceKm);
         }
-
         bool didAutoStop = false;
         if (_activeEdsPoint != null) {
-          if (_geofenceService.checkAutomaticStop(data, _activeEdsPoint!, newDistance)) {
+          if (_geofenceService.checkAutomaticStop(
+            data,
+            _activeEdsPoint!,
+            newDistance,
+          )) {
             didAutoStop = true;
           }
         }
-
         if (didAutoStop) {
           _isActive = false;
           _currentDistanceMeters = newDistance;
           _currentStatus = newStatus;
           _averageSpeed = newAverageSpeed;
           _currentLiveSpeed = newLiveSpeed;
-
           // Skor hesapla ve göster (resetTrackingState ÖNCE)
           _handleSessionEnd(edsPointName: _activeEdsPoint?.name);
-
           setState(() {});
-
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('EDS Bölgesinden Çıkıldı. Takip Sonlandırıldı.')),
+              const SnackBar(
+                content: Text('EDS Bölgesinden Çıkıldı. Takip Sonlandırıldı.'),
+              ),
             );
           }
           return;
         }
-
       }
-
       final bool needsRebuild =
           newLiveSpeed != _currentLiveSpeed ||
           newAverageSpeed != _averageSpeed ||
           newStatus != _currentStatus ||
           didAutoStart;
-
       _currentLiveSpeed = newLiveSpeed;
       _averageSpeed = newAverageSpeed;
       _currentDistanceMeters = newDistance;
       _currentStatus = newStatus;
-
       if (needsRebuild) {
         setState(() {});
       }
-
       if (didAutoStart && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('EDS Bölgesine Girildi: ${_activeEdsPoint!.name}')),
+          SnackBar(
+            content: Text('EDS Bölgesine Girildi: ${_activeEdsPoint!.name}'),
+          ),
         );
       }
     });
@@ -279,13 +278,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
     final totalSeconds = _trackingStartTime != null
         ? DateTime.now().difference(_trackingStartTime!).inSeconds
         : 0;
-
     // Minimum seans kontrolü — çok kısa seanslar için skor gösterme
     if (totalSeconds < _minSessionSeconds) {
       _resetTrackingState();
       return;
     }
-
     // Pure function çağrısı — side effect yok
     final scoreValue = DrivingScoreService.calculateScore(
       totalSessionSeconds: totalSeconds,
@@ -294,12 +291,21 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
       targetSpeed: _targetSpeed,
       harshEventCount: _harshEventCount,
     );
-
     // Bileşen ratio'larını hesapla
-    final complianceRatio = (1.0 - (_violationSeconds / totalSeconds)).clamp(0.0, 1.0);
-    final speedAccuracy = (1.0 - ((_averageSpeed - _targetSpeed).abs() / _targetSpeed)).clamp(0.0, 1.0);
-    final smoothness = (1.0 - (_harshEventCount / DrivingScoreService.defaultExpectedMaxEvents)).clamp(0.0, 1.0);
-
+    final complianceRatio = (1.0 - (_violationSeconds / totalSeconds)).clamp(
+      0.0,
+      1.0,
+    );
+    final speedAccuracy =
+        (1.0 - ((_averageSpeed - _targetSpeed).abs() / _targetSpeed)).clamp(
+          0.0,
+          1.0,
+        );
+    final smoothness =
+        (1.0 -
+                (_harshEventCount /
+                    DrivingScoreService.defaultExpectedMaxEvents))
+            .clamp(0.0, 1.0);
     final drivingScore = DrivingScore(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       sessionDate: DateTime.now(),
@@ -313,16 +319,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
       targetSpeed: _targetSpeed,
       edsPointName: edsPointName,
     );
-
     // Riverpod üzerinden kaydet
     ref.read(drivingScoreListProvider.notifier).addScore(drivingScore);
-
     // TTS ile skoru oku (fire-and-forget, setState DIŞINDA)
     AudioService().speakScore(scoreValue);
-
     // Skor diyaloğunu göster
     _showScoreDialog(drivingScore);
-
     // Sayaçları sıfırla
     _resetTrackingState();
   }
@@ -347,8 +349,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
     }
   }
 
-
-
   void _toggleTracking() {
     if (_isActive) {
       final endPoint = _lastSpeedData;
@@ -356,16 +356,16 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
       final distance = _currentDistanceMeters;
       final edsPointName = _activeEdsPoint?.name;
       final wasAutoEds = _activeEdsPoint != null;
-
       setState(() {
         _isActive = false;
         _currentStatus = SpeedStatus.safe;
       });
-
       // Skor hesapla ve göster
       _handleSessionEnd(edsPointName: edsPointName);
-
-      if (!wasAutoEds && startPoint != null && endPoint != null && distance > 500) {
+      if (!wasAutoEds &&
+          startPoint != null &&
+          endPoint != null &&
+          distance > 500) {
         _promptSaveCustomEds(startPoint, endPoint, distance);
       }
     } else {
@@ -391,18 +391,31 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
             children: [
               Text(
                 'Katedilen mesafe: ${(distance / 1000).toStringAsFixed(1)} km.\nBu rotayı özel EDS noktası olarak kaydetmek ister misiniz?',
-                style: const TextStyle(fontSize: 14, color: DesignTokens.textDark),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: DesignTokens.textDark,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: nameController,
-                style: const TextStyle(fontSize: 14, color: DesignTokens.textDark),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: DesignTokens.textDark,
+                ),
                 decoration: InputDecoration(
                   labelText: 'Güzergah Adı (Örn: İşe Gidiş)',
-                  labelStyle: const TextStyle(fontSize: 14, color: DesignTokens.textGrey),
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    color: DesignTokens.textGrey,
+                  ),
                   border: const OutlineInputBorder(),
-                  enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: DesignTokens.textGrey)),
-                  focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: DesignTokens.textDark)),
+                  enabledBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: DesignTokens.textGrey),
+                  ),
+                  focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: DesignTokens.textDark),
+                  ),
                 ),
               ),
             ],
@@ -413,13 +426,22 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 Navigator.pop(context);
                 _resetTrackingState();
               },
-              child: const Text('İPTAL', style: TextStyle(fontSize: 14, color: DesignTokens.textGrey, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'İPTAL',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: DesignTokens.textGrey,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: DesignTokens.statusViolation),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: DesignTokens.statusViolation,
+              ),
               onPressed: () async {
                 if (nameController.text.trim().isEmpty) return;
-                
+
                 final newPoint = EdsPoint(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: nameController.text.trim(),
@@ -430,19 +452,24 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                   isBidirectional: true,
                   speedLimit: _targetSpeed,
                 );
-
                 await EdsStorageService().saveCustomPoint(newPoint);
                 await _geofenceService.reloadPoints();
-
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Özel EDS Noktası Kaydedildi!')),
                 );
-                
+
                 _resetTrackingState();
               },
-              child: const Text('KAYDET', style: TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'KAYDET',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );
@@ -474,21 +501,37 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                         color: DesignTokens.background,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.speed, size: 36, color: DesignTokens.textDark),
+                      child: const Icon(
+                        Icons.speed,
+                        size: 36,
+                        color: DesignTokens.textDark,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'EDS Asistanı', 
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: DesignTokens.textDark, letterSpacing: -0.5),
+                      'EDS Asistanı',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: DesignTokens.textDark,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    const Text('Sürüş ve Radar Kontrol', style: DesignTokens.labelSmall),
+                    const Text(
+                      'Sürüş ve Radar Kontrol',
+                      style: DesignTokens.labelSmall,
+                    ),
                   ],
                 ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.0),
-                child: Divider(height: 1, color: DesignTokens.background, thickness: 2),
+                child: Divider(
+                  height: 1,
+                  color: DesignTokens.background,
+                  thickness: 2,
+                ),
               ),
               const SizedBox(height: 24),
               _buildDrawerItem(
@@ -498,12 +541,30 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
               ),
               const SizedBox(height: 8),
               _buildDrawerItem(
+                icon: Icons.history_rounded,
+                title: 'Sürüş Geçmişim',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ScoreHistoryView(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+              _buildDrawerItem(
                 icon: Icons.map_rounded,
                 title: 'Özel Noktalarım',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SavedEdsView()))
-                    .then((_) => _geofenceService.reloadPoints());
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SavedEdsView(),
+                    ),
+                  ).then((_) => _geofenceService.reloadPoints());
                 },
               ),
               const SizedBox(height: 8),
@@ -512,7 +573,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 title: 'Profilim',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileView()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileView(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 8),
@@ -522,7 +588,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 badgeCount: ref.watch(pendingRequestCountProvider),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const FriendsView()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FriendsView(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 8),
@@ -532,7 +603,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 badgeCount: ref.watch(incomingShareCountProvider),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const InboxView()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const InboxView()),
+                  );
                 },
               ),
               const SizedBox(height: 8),
@@ -541,7 +615,12 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 title: 'Topluluk',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const CommunityView()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CommunityView(),
+                    ),
+                  );
                 },
               ),
               const SizedBox(height: 8),
@@ -551,16 +630,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                   title: 'Pro\'ya Yükselt',
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const PaywallView()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PaywallView(),
+                      ),
+                    );
                   },
                 ),
             ],
           ),
         ),
       ),
-      body: SafeArea(
-        child: _buildDashboardContent(),
-      ),
+      body: SafeArea(child: _buildDashboardContent()),
     );
   }
 
@@ -592,7 +674,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
               if (badgeCount > 0) ...[
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: DesignTokens.statusViolation,
                     borderRadius: BorderRadius.circular(12),
@@ -614,7 +699,11 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
     );
   }
 
-  Widget _buildDrawerItem({required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: InkWell(
@@ -642,8 +731,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
   }
 
   Widget _buildDashboardContent() {
-    final double currentDistanceKm = _isActive ? (_currentDistanceMeters / 1000.0) : 0.0;
-
+    final double currentDistanceKm = _isActive
+        ? (_currentDistanceMeters / 1000.0)
+        : 0.0;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -651,7 +741,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             AverageSpeedCard(
-              speed: _isActive ? _averageSpeed : 0, 
+              speed: _isActive ? _averageSpeed : 0,
               status: _isActive ? _currentStatus : SpeedStatus.safe,
               currentDistance: currentDistanceKm,
               totalDistance: _isActive ? _totalDistance : 0.0,
@@ -665,15 +755,15 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
               },
               audioMode: AudioService().currentMode,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             Row(
               children: [
                 Expanded(
                   child: MetricCard(
                     label: 'ANLIK HIZ',
-                    valueText: _isActive ? _currentLiveSpeed.toString() : '0', 
+                    valueText: _isActive ? _currentLiveSpeed.toString() : '0',
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -689,9 +779,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> with WidgetsBindi
                 ),
               ],
             ),
-
             const SizedBox(height: 16),
-
             ActionButton(
               isActive: _isActive,
               status: _currentStatus,

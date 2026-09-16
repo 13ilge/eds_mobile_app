@@ -42,13 +42,13 @@ No CI, no Cloud Functions, empty `README.md`. A draft `firestore.rules` exists i
 - `SpeedData` has no `==`.
 - `SpeedStatus` enum lives in `lib/theme/design_tokens.dart`, not a model.
 
-## Dashboard change-safety rules (`lib/views/dashboard_view.dart`)
+## Dashboard architecture (`lib/views/dashboard_view.dart` + `lib/providers/gps_tracking_provider.dart`)
 
-- Do not put TTS/audio calls inside `setState`, and do not wrap GPS-listener computation in `setState` — only final display assignments trigger rebuilds.
-- Keep `_speedSubscription?.cancel()` at the top of `_startListeningToGPS()` to prevent double subscription.
-- `_totalDistance` defaults to `10.0` km as a mock when no corridor is active.
-- Wrap all TTS calls in try/catch; TTS fails silently without a Turkish voice pack.
-- Prefer `MediaQuery.sizeOf(context)` over `MediaQuery.of(context).size`.
+- All GPS tracking state (activity, speed/distance/status, scoring counters, auto start/stop) lives in `TrackingState` via `gpsTrackingNotifier` (`GpsTrackingNotifier`, a `StateNotifier`). The view is a thin renderer — do NOT add new mutable fields to `_DashboardViewState`.
+- `dashboard_view` yields no logic of its own: watch state in build, call notifier methods (`requestPermission`, `toggleTracking`, `cycleAudioMode`), and consume UI side effects through `ref.listen` (snackbars via `TrackingUiEvent`, score sheet via `lastSession` id change, custom-route dialog via `customEdsPrompt`).
+- Session-end scoring stays in the notifier (`DrivingScoreService.calculateScore`) and persists via `drivingScoreListProvider.addScore` (fire-and-forget).
+- GPS subscription guard: `requestPermission()` subscribes once (`_speedSubscription != null` check) — geolocator stream tests override `locationServiceProvider` with a fake `Stream<SpeedData>`.
+- `_totalDistance` defaults to `10.0` km as a mock when no corridor is active (`TrackingState.totalDistanceKm`).
 
 ## Conventions
 

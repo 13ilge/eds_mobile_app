@@ -44,7 +44,8 @@ class EdsGeofenceService {
   }
 
   EdsPoint? checkAutomaticStart(SpeedData currentData) {
-    if (currentData.heading < 0) return null;
+    final heading = currentData.heading;
+    if (heading == null) return null;
 
     for (final point in _activePoints) {
       if (_isWithinBoundingBox(
@@ -68,7 +69,7 @@ class EdsGeofenceService {
             point.endLongitude,
           );
 
-          if (_isHeadingMatching(currentData.heading, expectedHeading)) {
+          if (_isHeadingMatching(heading, expectedHeading)) {
             return point;
           }
         }
@@ -96,7 +97,7 @@ class EdsGeofenceService {
               point.startLongitude,
             );
 
-            if (_isHeadingMatching(currentData.heading, expectedHeading)) {
+            if (_isHeadingMatching(heading, expectedHeading)) {
               return point;
             }
           }

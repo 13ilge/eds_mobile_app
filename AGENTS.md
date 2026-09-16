@@ -5,12 +5,12 @@ Flutter app ("Koridor Hız Asistanı") — a Turkish EDS/radar speed assistant. 
 ## Commands
 
 - `flutter pub get`
-- `flutter analyze` — currently reports 26 info/warning issues, no errors. `scratch/` is NOT excluded even though it is gitignored, so its files show up here.
-- `flutter test` — currently **FAILS**. `test/widget_test.dart` is the untouched Flutter template (counter test, expects `Icons.add`, missing `ProviderScope`). Don't trust a green suite; this is the only test.
-- Single test: `flutter test test/widget_test.dart`
+- `flutter analyze` — currently reports **0 issues**. Keep it at 0; `scratch/` is excluded in `analysis_options.yaml`.
+- `flutter test` — **54 tests, all passing** across: geofence logic (`test/eds_geofence_service_test.dart`), score math (`test/driving_score_test.dart`, `test/driving_score_persistence_test.dart`, `test/driving_score_provider_test.dart`), badges (`test/badge_service_test.dart`), models (`test/eds_point_test.dart`), storage (`test/eds_storage_service_test.dart`), and app auth-state branches (`test/widget_test.dart`, uses `authStateProvider` overrides — Firebase is never initialized in tests).
+- Single test: `flutter test test/<file>.dart`
 - `flutter run` (Android only, see below)
 
-No CI, no Cloud Functions, no `firestore.rules`/indexes, empty `README.md`. Rules/indexes live in the Firebase console.
+No CI, no Cloud Functions, empty `README.md`. A draft `firestore.rules` exists in the repo root but is NOT deployed — live rules still live in the Firebase console and must be reconciled/updated after any collection change.
 
 ## Platform / Firebase gotchas
 
@@ -29,15 +29,16 @@ No CI, no Cloud Functions, no `firestore.rules`/indexes, empty `README.md`. Rule
 - All user-facing strings are Turkish. TTS language is hardcoded `tr-TR`. Never add English UI text.
 - Default speed limit is `82` km/h (Turkish EDS standard).
 - GPS stream uses `distanceFilter: 2` m; distance math assumes sequential ~2 m updates.
+- `SpeedData.heading` is `double?`: `null` means "bearing unavailable". `LocationService.mapHeading` maps geolocator's negative sentinel (-1, or negative bearings) to `null`; a null heading therefore never triggers `checkAutomaticStart`. Android reports `heading: 0` while stationary — not null — by design.
 - Geofence constants in `lib/services/eds_geofence_service.dart`: bounding box `0.006°` (tuned for ~38°N Turkey), trigger 500 m, end 100 m, heading tolerance 45°. `checkAutomaticStop` requires `distanceTraveledMeters >= 500` — do not lower it.
-- Storage keys are per-user: `custom_eds_points_<uid>` (`EdsStorageService`) and `driving_scores_<uid>` (`DrivingScoreService`), falling back to `guest`. On auth change call `EdsStorageService().clearCache()` then `EdsGeofenceService().reloadPoints()` (already done in `auth_service.dart`).
+- Storage keys are per-user: `custom_eds_points_<uid>` (`EdsStorageService`) and `driving_scores_<uid>` (`DrivingScoreService`), falling back to `guest`. The `_storageKey` getters are guarded — if Firebase Auth is unavailable they fall back to `guest` instead of throwing. On auth change call `EdsStorageService().clearCache()` then `EdsGeofenceService().reloadPoints()` (already done in `auth_service.dart`).
 - `EdsStorageService` caches points in `_cachedPoints`; invalidate with `clearCache()`, not by re-reading. After saving/deleting a custom point, call `_geofenceService.reloadPoints()`.
 - Pro status: check RevenueCat `CustomerInfo.entitlements.all["pro"]?.isActive` via `isProProvider` (`lib/providers/subscription_provider.dart`). Never read Firestore `isPro` (it is server-side only; `UserProfile.toFirestore()` hardcodes `isPro: false`).
 - `community_points` is read by lowercased `region` + `orderBy('upvotes')` + `limit` with `startAfterDocument` pagination (`sharing_service.dart`). A `geoHash` field is stored but prefix queries are not implemented.
 
 ## Model quirks
 
-- `EdsPoint` has no `==`/`hashCode` and no `copyWith`: compare via `id` or `hasSameCoordinates()`, and construct a full new instance to edit. JSON defaults `speedLimit` to 82.
+- `EdsPoint` has `copyWith`, `==`/`hashCode` (field-based) and `hasSameCoordinates()`. `==` compares ALL fields (id, name, coords, bidirectional, speedLimit); for positional/near-same-place checks use `hasSameCoordinates()` (epsilon `0.00001`) or `id`. JSON defaults `speedLimit` to 82.
 - `SpeedData` has no `==`.
 - `SpeedStatus` enum lives in `lib/theme/design_tokens.dart`, not a model.
 
@@ -52,5 +53,5 @@ No CI, no Cloud Functions, no `firestore.rules`/indexes, empty `README.md`. Rule
 ## Conventions
 
 - All colors/text styles/decorations come from `lib/theme/design_tokens.dart`; no hardcoded color values elsewhere.
-- `flutter_lints` v6 defaults (`analysis_options.yaml`), no custom rules. Existing analyzer noise to avoid adding more: `withOpacity` → `.withValues()`, `Radio.activeColor` → `activeThumbColor`, `TextFormField value` → `initialValue`, empty `catch {}`, `__` unused params, `for` without braces.
+- `flutter_lints` v6 defaults + `scratch/**` analyzer exclude (`analysis_options.yaml`). Baseline is **0 issues** — write in the fixed style directly: `withOpacity` → `.withValues()`, `Radio.activeColor` → `activeThumbColor`, `TextFormField value` → `initialValue`, no empty `catch {}`, `_` (not `__`/`___`) unused params, `for` with braces.
 - `.gitignore` ignores `*.ps1` and `scratch/` (helper scripts are intentionally uncommitted).

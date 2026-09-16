@@ -3,6 +3,13 @@
 import '../models/speed_data.dart';
 
 class LocationService {
+  /// geolocator signals "heading unavailable" with a negative value
+  /// (no magnetometer, or iOS while stationary); expose that as null
+  /// instead of a fake bearing.
+  static double? mapHeading(double rawPositionHeading) {
+    return rawPositionHeading < 0 ? null : rawPositionHeading;
+  }
+
   Future<bool> checkAndRequestPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -43,7 +50,9 @@ class LocationService {
           timestamp: position.timestamp,
           latitude: position.latitude,
           longitude: position.longitude,
-          heading: position.heading,
+          // geolocator signals "heading unavailable" with a negative value;
+          // expose that as null instead of a fake bearing.
+          heading: mapHeading(position.heading),
         );
       },
     );

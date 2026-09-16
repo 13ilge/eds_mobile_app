@@ -23,7 +23,7 @@ import 'package:eds_mobile_app/services/eds_geofence_service.dart';
   return (lat + dLat, lng + dLng);
 }
 
-SpeedData dataAt(double lat, double lng, double heading, {double speed = 90}) {
+SpeedData dataAt(double lat, double lng, double? heading, {double speed = 90}) {
   return SpeedData(
     currentSpeed: speed,
     timestamp: DateTime.now(),
@@ -70,7 +70,13 @@ void main() {
       },
     );
 
-    test('returns null when heading is unset (< 0)', () {
+    test('returns null when heading is unavailable (null)', () {
+      final (lat, lng) = offsetByMeters(38.3512, 38.3845, startBearing, 150.0);
+      final result = service.checkAutomaticStart(dataAt(lat, lng, null));
+      expect(result, isNull);
+    });
+
+    test('raw negative heading (no match at bearing level) returns null', () {
       final (lat, lng) = offsetByMeters(38.3512, 38.3845, startBearing, 150.0);
       final result = service.checkAutomaticStart(dataAt(lat, lng, -1));
       expect(result, isNull);

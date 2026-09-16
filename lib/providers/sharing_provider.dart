@@ -18,6 +18,6 @@ final incomingShareCountProvider = Provider<int>((ref) {
   return shares.when(
     data: (list) => list.length,
     loading: () => 0,
-    error: (_, __) => 0,
+    error: (_, _) => 0,
   );
 });

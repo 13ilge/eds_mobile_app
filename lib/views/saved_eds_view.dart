@@ -305,7 +305,7 @@ class _ShareBottomSheetState extends ConsumerState<_ShareBottomSheet> {
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Text('Arkadaş listesi yüklenemedi.',
+            error: (_, _) => const Text('Arkadaş listesi yüklenemedi.',
                 style: TextStyle(color: DesignTokens.textGrey)),
           ),
 
@@ -315,7 +315,7 @@ class _ShareBottomSheetState extends ConsumerState<_ShareBottomSheet> {
               style: TextStyle(fontWeight: FontWeight.w600, color: DesignTokens.textDark, fontSize: 15)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
-            value: _selectedRegion,
+            initialValue: _selectedRegion,
             decoration: const InputDecoration(
               labelText: 'Şehir Seçin',
               border: OutlineInputBorder(),

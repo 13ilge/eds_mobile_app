@@ -26,7 +26,6 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
   bool _isLoading = false;
   bool _hasMore = true;
   final Map<String, bool> _upvoteStates = {};
-  final ScrollController _scrollController = ScrollController();
   DocumentSnapshot? _lastDoc;
 
   static const List<String> _regions = [
@@ -181,7 +180,7 @@ class _CommunityViewState extends ConsumerState<CommunityView> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: DropdownButtonFormField<String>(
-            value: _selectedRegion,
+            initialValue: _selectedRegion,
             decoration: InputDecoration(
               labelText: 'Şehir',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

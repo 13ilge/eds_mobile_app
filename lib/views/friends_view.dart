@@ -337,7 +337,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: index < 3 ? DesignTokens.primaryBlue.withOpacity(0.2) : Colors.grey.shade200,
+                      backgroundColor: index < 3 ? DesignTokens.primaryBlue.withValues(alpha: 0.2) : Colors.grey.shade200,
                       child: Text(
                         '${index + 1}',
                         style: TextStyle(
@@ -410,7 +410,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
               children: [
                 Icon(Icons.people_outline,
                     size: 64,
-                    color: DesignTokens.textGrey.withOpacity(0.5)),
+                    color: DesignTokens.textGrey.withValues(alpha: 0.5)),
                 const SizedBox(height: 16),
                 const Text(
                   'Henüz arkadaşınız yok',
@@ -446,7 +446,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                     horizontal: 16, vertical: 8),
                 leading: CircleAvatar(
                   backgroundColor:
-                      DesignTokens.primaryBlue.withOpacity(0.1),
+                      DesignTokens.primaryBlue.withValues(alpha: 0.1),
                   child: Text(initial,
                       style: const TextStyle(
                           color: DesignTokens.primaryBlue,
@@ -487,7 +487,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
               children: [
                 Icon(Icons.mail_outline,
                     size: 64,
-                    color: DesignTokens.textGrey.withOpacity(0.5)),
+                    color: DesignTokens.textGrey.withValues(alpha: 0.5)),
                 const SizedBox(height: 16),
                 const Text(
                   'Bekleyen istek yok',
@@ -517,7 +517,7 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                 children: [
                   CircleAvatar(
                     backgroundColor:
-                        DesignTokens.primaryBlue.withOpacity(0.1),
+                        DesignTokens.primaryBlue.withValues(alpha: 0.1),
                     child: Text(initial,
                         style: const TextStyle(
                             color: DesignTokens.primaryBlue,
@@ -553,22 +553,19 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                         return;
                       }
                       try {
+                        final messenger = ScaffoldMessenger.of(context);
                         await ref
                             .read(friendServiceProvider)
                             .acceptFriendRequest(r.id);
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             SnackBar(
                                 content: Text(
                                     '${r.fromName} artık arkadaşınız!')),
                           );
                         }
                       } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Hata: $e')),
-                          );
-                        }
+                        debugPrint('acceptFriendRequest failed: $e');
                       }
                     },
                   ),
@@ -576,15 +573,15 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                     icon: const Icon(Icons.cancel,
                         color: DesignTokens.statusViolation, size: 32),
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       try {
                         await ref
                             .read(friendServiceProvider)
                             .rejectFriendRequest(r.id);
                       } catch (e) {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Hata: $e')),
-                          );
+                          messenger.showSnackBar(
+                              SnackBar(content: Text('Hata: $e')));
                         }
                       }
                     },

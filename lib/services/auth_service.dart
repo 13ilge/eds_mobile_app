@@ -126,14 +126,20 @@ class AuthService {
       
       // Delete related friendships
       final sentFriendships = await _firestore.collection('friendships').where('fromUid', isEqualTo: uid).get();
-      for (final doc in sentFriendships.docs) batch.delete(doc.reference);
-      
+      for (final doc in sentFriendships.docs) {
+        batch.delete(doc.reference);
+      }
+
       final receivedFriendships = await _firestore.collection('friendships').where('toUid', isEqualTo: uid).get();
-      for (final doc in receivedFriendships.docs) batch.delete(doc.reference);
-      
+      for (final doc in receivedFriendships.docs) {
+        batch.delete(doc.reference);
+      }
+
       // Delete received shares
       final sharedPoints = await _firestore.collection('shared_points').where('targetUid', isEqualTo: uid).get();
-      for (final doc in sharedPoints.docs) batch.delete(doc.reference);
+      for (final doc in sharedPoints.docs) {
+        batch.delete(doc.reference);
+      }
       
       await batch.commit();
       

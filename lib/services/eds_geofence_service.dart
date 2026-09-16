@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/eds_point.dart';
 import '../models/speed_data.dart';
@@ -23,7 +24,12 @@ class EdsGeofenceService {
   }
 
   Future<void> reloadPoints() async {
-    final customPoints = await _storageService.loadCustomPoints();
+    List<EdsPoint> customPoints = [];
+    try {
+      customPoints = await _storageService.loadCustomPoints();
+    } catch (e) {
+      debugPrint('Error loading custom EDS points: $e');
+    }
     _activePoints = [...EdsDataRepository.malatyaEdsPoints, ...customPoints];
   }
 

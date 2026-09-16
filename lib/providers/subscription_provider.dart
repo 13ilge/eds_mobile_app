@@ -1,4 +1,5 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
@@ -21,6 +22,8 @@ class CustomerInfoNotifier extends StateNotifier<CustomerInfo?> {
     try {
       state = await Purchases.getCustomerInfo();
     } catch (e) {
+      // Keep the last known customer info on transient refresh failures.
+      debugPrint('customer info refresh failed: $e');
     }
   }
 }

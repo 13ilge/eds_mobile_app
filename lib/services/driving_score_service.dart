@@ -16,8 +16,13 @@ class DrivingScoreService {
   static const int defaultExpectedMaxEvents = 10;
 
   String get _storageKey {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
-    return 'driving_scores_$uid';
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+      return 'driving_scores_$uid';
+    } catch (e) {
+      debugPrint('Firebase auth unavailable, falling back to guest: $e');
+      return 'driving_scores_guest';
+    }
   }
 
   Future<SharedPreferences> get _preferences async {

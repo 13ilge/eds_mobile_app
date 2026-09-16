@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +6,13 @@ import '../models/eds_point.dart';
 
 class EdsStorageService {
   String get _storageKey {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
-    return 'custom_eds_points_$uid';
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+      return 'custom_eds_points_$uid';
+    } catch (e) {
+      debugPrint('Firebase auth unavailable, falling back to guest: $e');
+      return 'custom_eds_points_guest';
+    }
   }
 
   static final EdsStorageService _instance = EdsStorageService._internal();
@@ -33,7 +38,7 @@ class EdsStorageService {
 
     final prefs = await _preferences;
     final String? jsonString = prefs.getString(_storageKey);
-    
+
     if (jsonString == null) {
       _cachedPoints = [];
       return [];
@@ -71,7 +76,9 @@ class EdsStorageService {
 
   Future<void> _persistPoints(List<EdsPoint> points) async {
     final prefs = await _preferences;
-    final String jsonString = jsonEncode(points.map((p) => p.toJson()).toList());
+    final String jsonString = jsonEncode(
+      points.map((p) => p.toJson()).toList(),
+    );
     await prefs.setString(_storageKey, jsonString);
   }
 }

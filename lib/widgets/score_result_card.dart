@@ -117,7 +117,7 @@ class ScoreResultCard extends ConsumerWidget {
 
           // Skor mesajı
           Text(
-            '${_getScoreMessage(score.score)}',
+            _getScoreMessage(score.score),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,

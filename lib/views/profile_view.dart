@@ -274,7 +274,7 @@ class ProfileView extends ConsumerWidget {
                       style: TextStyle(fontSize: 12),
                     ),
                     value: profile.isLeaderboardHidden,
-                    activeColor: DesignTokens.primaryBlue,
+                    activeThumbColor: DesignTokens.primaryBlue,
                     onChanged: (val) {
                       ref
                           .read(authServiceProvider)

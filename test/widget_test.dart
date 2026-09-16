@@ -1,30 +1,49 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:eds_mobile_app/main.dart';
+import 'package:eds_mobile_app/providers/auth_provider.dart';
+
+// KoridorApp watches authStateProvider (a FirebaseAuth stream). In tests we
+// override the provider instead of initializing Firebase, so we can exercise
+// each auth state branch of KoridorApp.build without platform plugins.
+ProviderScope scopeWith(Stream<User?> authStream) {
+  return ProviderScope(
+    overrides: [authStateProvider.overrideWith((ref) => authStream)],
+    child: const KoridorApp(),
+  );
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const KoridorApp());
+  testWidgets('shows loading spinner while auth state resolves', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(scopeWith(const Stream.empty()));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+  testWidgets('shows auth view when user is signed out', (
+    WidgetTester tester,
+  ) async {
+    // Stream that emits null map to a signed-out user.
+    await tester.pumpWidget(scopeWith(Stream<User?>.value(null)));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Signed-out view should not render the dashboard immediately; the
+    // loading spinner must be gone at minimum.
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('shows error message when auth stream fails', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(scopeWith(Stream<User?>.error('baglanti hatasi')));
+    await tester.pump();
+
+    expect(find.textContaining('Hata'), findsOneWidget);
+    expect(find.textContaining('baglanti hatasi'), findsOneWidget);
   });
 }

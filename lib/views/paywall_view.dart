@@ -88,7 +88,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  DesignTokens.primaryBlue.withOpacity(0.2),
+                  DesignTokens.primaryBlue.withValues(alpha: 0.2),
                   DesignTokens.surface,
                 ],
               ),
@@ -144,8 +144,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
                         padding: const EdgeInsets.only(bottom: 12.0),
                         child: _buildPackageButton(package),
                       );
-                    }).toList()
-                  else
+                    })else
                     const Center(
                       child: Text(
                         'Şu an için erişilebilir paket bulunamadı.',
@@ -185,7 +184,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: DesignTokens.primaryBlue.withOpacity(0.1),
+            color: DesignTokens.primaryBlue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: DesignTokens.primaryBlue, size: 24),
@@ -223,7 +222,7 @@ class _PaywallViewState extends ConsumerState<PaywallView> {
           boxShadow: [
             if (isAnnual)
               BoxShadow(
-                color: DesignTokens.primaryBlue.withOpacity(0.3),
+                color: DesignTokens.primaryBlue.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

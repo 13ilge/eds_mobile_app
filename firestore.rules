@@ -1,0 +1,69 @@
+rules_version = '2';
+
+// Taslak kurallar — uygulamaya dağıtmadan ÖNCE Firebase Console'a (veya
+// `firebase deploy --only firestore:rules`) taşıyın. Koleksiyonlar,
+// lib/services/*.dart içindeki gerçek kullanımlardan türetilmiştir:
+//   auth_service.dart  → users/{uid}
+//   friend_service.dart → friendships/{id}
+//   sharing_service.dart → shared_points/{id}, community_points/{id}/votes/{uid}
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Kendi profilini görüntüleyip düzenleyebilir. Başkası yazamaz.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Arkadaşlıklar: iki taraf da okur/göndereni örür; yalnızca ilgili
+    // taraflardan biri değiştirebilir/silebilir.
+    match /friendships/{friendshipId} {
+      allow read: if request.auth != null &&
+        (resource.data.fromUid == request.auth.uid ||
+         resource.data.toUid == request.auth.uid);
+      allow create: if request.auth != null &&
+        request.resource.data.fromUid == request.auth.uid;
+      allow update, delete: if request.auth != null &&
+        (resource.data.fromUid == request.auth.uid ||
+         resource.data.toUid == request.auth.uid);
+    }
+
+    // Paylaşılan EDS noktaları: gönderen ve hedef kullanıcı erişir.
+    match /shared_points/{shareId} {
+      allow read: if request.auth != null &&
+        (resource.data.byUid == request.auth.uid ||
+         resource.data.targetUid == request.auth.uid);
+      allow create: if request.auth != null &&
+        request.resource.data.byUid == request.auth.uid;
+      allow delete: if request.auth != null &&
+        (resource.data.byUid == request.auth.uid ||
+         resource.data.targetUid == request.auth.uid);
+      allow update: if false; // paylaşımlar değiştirilemez
+    }
+
+    // Topluluk noktaları: herkes okur (uygulama region+upvote listeleyip);
+    // yalnızca sahibi yazabilir/silebilir.
+    match /community_points/{pointId} {
+      allow read: if true;
+      allow create: if request.auth != null &&
+        request.resource.data.byUid == request.auth.uid;
+      allow update, delete: if request.auth != null &&
+        resource.data.byUid == request.auth.uid;
+
+      // Oylar: her kullanıcı kendi belgesi ({communityPointId}/votes/{uid}).
+      match /votes/{voterUid} {
+        allow read: if request.auth != null;
+        allow create, update: if request.auth != null &&
+          request.auth.uid == voterUid;
+        allow delete: if request.auth != null &&
+          request.auth.uid == voterUid;
+      }
+    }
+
+    // Varsayılan: geri kalan herşey kapalı.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

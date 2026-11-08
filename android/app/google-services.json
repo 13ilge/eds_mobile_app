@@ -7,6 +7,51 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:317040695553:android:c52f5e68bbb27fa0f4a300",
+        "android_client_info": {
+          "package_name": "com.edsasistani.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "317040695553-5751np6f77r23utqq5s9tvjpelok84dj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.edsasistani.app",
+            "certificate_hash": "4413e66ffa33610c615a44d7e00b205dc89c212b"
+          }
+        },
+        {
+          "client_id": "317040695553-5o6l1u3k3bgno01pcpvba9djus25lj17.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.edsasistani.app",
+            "certificate_hash": "6eb3914e7cf25f66db330952f3680057a7ce7b52"
+          }
+        },
+        {
+          "client_id": "317040695553-8gmlfbt2n9s1jcpknmhskm8540q1f34h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyaJUHlmACHllR_gEsJ0Q5-jc_8dLQ0W0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "317040695553-8gmlfbt2n9s1jcpknmhskm8540q1f34h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:317040695553:android:af13f08af80814edf4a300",
         "android_client_info": {
           "package_name": "com.example.eds_mobile_app"

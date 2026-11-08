@@ -57,28 +57,9 @@ class FriendService {
   }
 
   Future<void> acceptFriendRequest(String friendshipId) async {
-    final batch = _firestore.batch();
-    final docRef = _firestore.collection('friendships').doc(friendshipId);
-
-    batch.update(docRef, {'status': 'accepted'});
-
-    final doc = await docRef.get();
-    if (doc.exists) {
-      final data = doc.data()!;
-      final fromUid = data['fromUid'] as String;
-      final toUid = data['toUid'] as String;
-
-      batch.update(
-        _firestore.collection('users').doc(fromUid),
-        {'friendCount': FieldValue.increment(1)},
-      );
-      batch.update(
-        _firestore.collection('users').doc(toUid),
-        {'friendCount': FieldValue.increment(1)},
-      );
-    }
-
-    await batch.commit();
+    await _firestore.collection('friendships').doc(friendshipId).update({
+      'status': 'accepted',
+    });
   }
 
   Future<void> rejectFriendRequest(String friendshipId) async {
@@ -86,28 +67,7 @@ class FriendService {
   }
 
   Future<void> removeFriend(String friendshipId) async {
-    final docRef = _firestore.collection('friendships').doc(friendshipId);
-    final doc = await docRef.get();
-
-    if (doc.exists) {
-      final data = doc.data()!;
-      final fromUid = data['fromUid'] as String;
-      final toUid = data['toUid'] as String;
-
-      final batch = _firestore.batch();
-      batch.delete(docRef);
-
-      batch.update(
-        _firestore.collection('users').doc(fromUid),
-        {'friendCount': FieldValue.increment(-1)},
-      );
-      batch.update(
-        _firestore.collection('users').doc(toUid),
-        {'friendCount': FieldValue.increment(-1)},
-      );
-
-      await batch.commit();
-    }
+    await _firestore.collection('friendships').doc(friendshipId).delete();
   }
 
   Stream<List<Friendship>> getFriendsStream() {

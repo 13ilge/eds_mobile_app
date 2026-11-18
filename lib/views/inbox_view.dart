@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../providers/sharing_provider.dart';
-import '../providers/subscription_provider.dart';
 import '../theme/design_tokens.dart';
-import 'paywall_view.dart';
 
 class InboxView extends ConsumerWidget {
   const InboxView({super.key});
@@ -169,15 +167,6 @@ class InboxView extends ConsumerWidget {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () async {
-                              final isPro = ref.read(isProProvider);
-                              if (!isPro) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => const PaywallView()),
-                                );
-                                return;
-                              }
                               try {
                                 await ref
                                     .read(sharingServiceProvider)

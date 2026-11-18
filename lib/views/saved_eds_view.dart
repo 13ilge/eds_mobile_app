@@ -5,9 +5,7 @@ import '../services/eds_storage_service.dart';
 import '../services/sharing_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/friends_provider.dart';
-import '../providers/subscription_provider.dart';
 import '../theme/design_tokens.dart';
-import 'paywall_view.dart';
 
 class SavedEdsView extends ConsumerStatefulWidget {
   const SavedEdsView({super.key});
@@ -120,15 +118,6 @@ class _SavedEdsViewState extends ConsumerState<SavedEdsView> {
   }
 
   void _showShareDialog(EdsPoint point) {
-    final isPro = ref.read(isProProvider);
-    if (!isPro) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PaywallView()),
-      );
-      return;
-    }
-
     showModalBottomSheet(
       context: context,
       backgroundColor: DesignTokens.cardSurface,

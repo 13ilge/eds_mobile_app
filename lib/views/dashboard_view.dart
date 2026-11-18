@@ -7,7 +7,6 @@ import '../models/eds_point.dart';
 import '../providers/friends_provider.dart';
 import '../providers/gps_tracking_provider.dart';
 import '../providers/sharing_provider.dart';
-import '../providers/subscription_provider.dart';
 import '../services/eds_geofence_service.dart';
 import '../services/eds_storage_service.dart';
 import '../widgets/action_button.dart';
@@ -18,7 +17,6 @@ import '../widgets/score_result_card.dart';
 import 'community_view.dart';
 import 'friends_view.dart';
 import 'inbox_view.dart';
-import 'paywall_view.dart';
 import 'profile_view.dart';
 import 'saved_eds_view.dart';
 import 'score_history_view.dart';
@@ -234,21 +232,6 @@ class _DashboardViewState extends ConsumerState<DashboardView>
                 );
               },
             ),
-            const SizedBox(height: 8),
-            if (!ref.watch(isProProvider))
-              _buildDrawerItem(
-                icon: Icons.workspace_premium,
-                title: 'Pro\'ya Yükselt',
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PaywallView(),
-                    ),
-                  );
-                },
-              ),
           ],
         ),
       ),

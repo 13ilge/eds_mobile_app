@@ -2,9 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/driving_score.dart';
-import '../providers/driving_score_provider.dart';
 import '../theme/design_tokens.dart';
-import '../views/paywall_view.dart';
 
 class ScoreResultCard extends ConsumerWidget {
   final DrivingScore score;
@@ -34,7 +32,6 @@ class ScoreResultCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showDetails = ref.watch(detailedScoreAnalysisProvider);
     final scoreColor = DesignTokens.getScoreColor(score.score);
 
     return Container(
@@ -126,14 +123,9 @@ class ScoreResultCard extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Bileşen detayları (Pro gate)
-          if (showDetails) ...[
-            _buildComponentRow(context),
-            const SizedBox(height: 20),
-          ] else ...[
-            _buildProGate(context),
-            const SizedBox(height: 20),
-          ],
+          // Bileşen detayları
+          _buildComponentRow(),
+          const SizedBox(height: 20),
 
           // Meta bilgiler
           Container(
@@ -191,8 +183,8 @@ class ScoreResultCard extends ConsumerWidget {
     );
   }
 
-  /// Pro kullanıcılar için 3 bileşen puanını gösteren satır.
-  Widget _buildComponentRow(BuildContext context) {
+  /// 3 bileşen puanını gösteren satır.
+  Widget _buildComponentRow() {
     return Row(
       children: [
         Expanded(
@@ -252,67 +244,6 @@ class ScoreResultCard extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildProGate(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context); // Bottom sheet'i kapat
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PaywallView()),
-        );
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: DesignTokens.primaryBlue.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: DesignTokens.primaryBlue.withValues(alpha: 0.2),
-          ),
-        ),
-        child: const Row(
-          children: [
-            Icon(
-              Icons.workspace_premium,
-              color: DesignTokens.primaryBlue,
-              size: 24,
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Detaylı Sürüş Analizi',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: DesignTokens.primaryBlue,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Bileşen bazlı analiz için Pro\'ya geçin',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: DesignTokens.textGrey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: DesignTokens.primaryBlue,
-              size: 16,
-            ),
-          ],
-        ),
       ),
     );
   }

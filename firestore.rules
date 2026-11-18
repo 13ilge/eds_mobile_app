@@ -1,67 +1,98 @@
 rules_version = '2';
 
-// Taslak kurallar — uygulamaya dağıtmadan ÖNCE Firebase Console'a (veya
-// `firebase deploy --only firestore:rules`) taşıyın. Koleksiyonlar,
-// lib/services/*.dart içindeki gerçek kullanımlardan türetilmiştir:
-//   auth_service.dart  → users/{uid}
-//   friend_service.dart → friendships/{id}
-//   sharing_service.dart → shared_points/{id}, community_points/{id}/votes/{uid}
+// Koleksiyonlar ve alan adları lib/services + lib/models ile birebir eşleşir:
+//   users/{uid}                       -> UserProfile
+//   friendships/{id}                  -> Friendship (participants: [fromUid, toUid])
+//   shared_points/{id}                -> SharedPoint (ownerUid, targetUid)
+//   community_points/{id}             -> CommunityPoint (ownerUid, upvotes)
+//   community_points/{id}/votes/{uid} -> oy belgesi
+//
+// Dağıtım: `firebase deploy --only firestore:rules` (veya Firebase Console).
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Kendi profilini görüntüleyip düzenleyebilir. Başkası yazamaz.
-    match /users/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if request.auth != null && request.auth.uid == uid;
-      allow delete: if request.auth != null && request.auth.uid == uid;
+    function signedIn() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
     }
 
-    // Arkadaşlıklar: iki taraf da okur/göndereni örür; yalnızca ilgili
-    // taraflardan biri değiştirebilir/silebilir.
+    // Profil: okuma (e-posta ile arama + liderlik tablosu) oturum açmış
+    // herkese açık; yazma yalnızca belgenin sahibine aittir.
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && userId == uid();
+      allow update: if signedIn() && userId == uid();
+      allow delete: if signedIn() && userId == uid();
+    }
+
+    // Arkadaşlıklar: yalnızca taraflar görür/değiştirir.
     match /friendships/{friendshipId} {
-      allow read: if request.auth != null &&
-        (resource.data.fromUid == request.auth.uid ||
-         resource.data.toUid == request.auth.uid);
-      allow create: if request.auth != null &&
-        request.resource.data.fromUid == request.auth.uid;
-      allow update, delete: if request.auth != null &&
-        (resource.data.fromUid == request.auth.uid ||
-         resource.data.toUid == request.auth.uid);
+      allow read: if signedIn()
+        && (uid() == resource.data.fromUid
+            || uid() == resource.data.toUid
+            || uid() in resource.data.participants);
+      allow create: if signedIn()
+        && request.resource.data.fromUid == uid()
+        && request.resource.data.toUid != uid()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.participants.size() == 2
+        && uid() in request.resource.data.participants;
+      allow update: if signedIn()
+        && (uid() == resource.data.fromUid || uid() == resource.data.toUid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && request.resource.data.status in ['accepted', 'rejected'];
+      allow delete: if signedIn()
+        && (uid() == resource.data.fromUid || uid() == resource.data.toUid);
     }
 
     // Paylaşılan EDS noktaları: gönderen ve hedef kullanıcı erişir.
     match /shared_points/{shareId} {
-      allow read: if request.auth != null &&
-        (resource.data.byUid == request.auth.uid ||
-         resource.data.targetUid == request.auth.uid);
-      allow create: if request.auth != null &&
-        request.resource.data.byUid == request.auth.uid;
-      allow delete: if request.auth != null &&
-        (resource.data.byUid == request.auth.uid ||
-         resource.data.targetUid == request.auth.uid);
+      allow read: if signedIn()
+        && (uid() == resource.data.ownerUid || uid() == resource.data.targetUid);
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == uid()
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != uid()
+        && request.resource.data.get('isPublic', false) == false;
       allow update: if false; // paylaşımlar değiştirilemez
+      allow delete: if signedIn()
+        && (uid() == resource.data.ownerUid || uid() == resource.data.targetUid);
     }
 
-    // Topluluk noktaları: herkes okur (uygulama region+upvote listeleyip);
-    // yalnızca sahibi yazabilir/silebilir.
+    // Topluluk noktaları: okuma oturum açmış herkese açık; oylama yalnızca
+    // `upvotes` alanını ±1 değiştirir, sahibi de kendi belgesini yönetir.
     match /community_points/{pointId} {
-      allow read: if true;
-      allow create: if request.auth != null &&
-        request.resource.data.byUid == request.auth.uid;
-      allow update, delete: if request.auth != null &&
-        resource.data.byUid == request.auth.uid;
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == uid()
+        && request.resource.data.upvotes == 0;
+      allow update: if signedIn()
+        && (
+          (uid() == resource.data.ownerUid
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['upvotes']))
+          ||
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes'])
+            && (request.resource.data.upvotes == resource.data.upvotes + 1
+                || request.resource.data.upvotes == resource.data.upvotes - 1))
+        );
+      allow delete: if signedIn() && uid() == resource.data.ownerUid;
 
-      // Oylar: her kullanıcı kendi belgesi ({communityPointId}/votes/{uid}).
+      // Oylar: her kullanıcı kendi belgesi ({pointId}/votes/{uid}).
       match /votes/{voterUid} {
-        allow read: if request.auth != null;
-        allow create, update: if request.auth != null &&
-          request.auth.uid == voterUid;
-        allow delete: if request.auth != null &&
-          request.auth.uid == voterUid;
+        allow read: if signedIn() && voterUid == uid();
+        allow create, update: if signedIn() && voterUid == uid();
+        allow delete: if signedIn() && voterUid == uid();
       }
     }
 
-    // Varsayılan: geri kalan herşey kapalı.
+    // Toplu (collection group) sorgular için: kullanıcı yalnızca kendi oy belgelerini okuyup silebilir.
+    match /{path=**}/votes/{voterUid} {
+      allow read, delete: if signedIn() && voterUid == uid();
+    }
+
+    // Varsayılan: geri kalan her şey kapalı.
     match /{document=**} {
       allow read, write: if false;
     }

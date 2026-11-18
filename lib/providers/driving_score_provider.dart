@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import '../models/driving_score.dart';
 import '../services/driving_score_service.dart';
-import 'subscription_provider.dart';
 
 import '../services/badge_service.dart';
 import 'auth_provider.dart';
@@ -47,10 +46,4 @@ final lastScoreProvider = Provider<DrivingScore?>((ref) {
 final averageScoreProvider = Provider<double>((ref) {
   final scores = ref.watch(drivingScoreListProvider);
   return DrivingScoreService().getAverageScore(scores);
-});
-
-/// Pro gate: Bileşen bazlı detaylı skor analizi sadece Pro kullanıcılara açık.
-/// Widget'lar bu provider'ı ref.watch ile tüketerek detay gösterimini kontrol eder.
-final detailedScoreAnalysisProvider = Provider<bool>((ref) {
-  return ref.watch(isProProvider);
 });

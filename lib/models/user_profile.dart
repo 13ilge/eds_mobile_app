@@ -51,7 +51,6 @@ class UserProfile {
       'displayName': displayName,
       'email': email,
       'photoUrl': photoUrl,
-      'isPro': false, // Sunucu tarafı için — istemci asla okumaz
       'createdAt': FieldValue.serverTimestamp(),
       'friendCount': friendCount,
       'averageScore': averageScore,

@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/friendship.dart';
 import '../providers/auth_provider.dart';
 import '../providers/friends_provider.dart';
-import '../providers/subscription_provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/design_tokens.dart';
-import 'paywall_view.dart';
 
 class FriendsView extends ConsumerStatefulWidget {
   const FriendsView({super.key});
@@ -33,15 +31,6 @@ class _FriendsViewState extends ConsumerState<FriendsView>
   }
 
   void _showAddFriendDialog() {
-    final isPro = ref.read(isProProvider);
-    if (!isPro) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const PaywallView()),
-      );
-      return;
-    }
-
     final emailController = TextEditingController();
     bool isSearching = false;
     String? resultMessage;
@@ -476,7 +465,6 @@ class _FriendsViewState extends ConsumerState<FriendsView>
 
   Widget _buildPendingTab() {
     final pendingAsync = ref.watch(pendingRequestsProvider);
-    final isPro = ref.watch(isProProvider);
 
     return pendingAsync.when(
       data: (requests) {
@@ -544,14 +532,6 @@ class _FriendsViewState extends ConsumerState<FriendsView>
                     icon: const Icon(Icons.check_circle,
                         color: DesignTokens.statusSafe, size: 32),
                     onPressed: () async {
-                      if (!isPro) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PaywallView()),
-                        );
-                        return;
-                      }
                       try {
                         final messenger = ScaffoldMessenger.of(context);
                         await ref

@@ -7,7 +7,6 @@ import 'views/dashboard_view.dart';
 import 'views/auth_view.dart';
 import 'providers/auth_provider.dart';
 import 'theme/design_tokens.dart';
-import 'services/subscription_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,8 +15,6 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
   );
-
-  await SubscriptionService().init();
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 

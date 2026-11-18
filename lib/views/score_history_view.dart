@@ -5,14 +5,12 @@ import 'package:intl/intl.dart';
 import '../models/driving_score.dart';
 import '../providers/driving_score_provider.dart';
 import '../theme/design_tokens.dart';
-import 'paywall_view.dart';
 
 class ScoreHistoryView extends ConsumerWidget {
   const ScoreHistoryView({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scores = ref.watch(drivingScoreListProvider);
-    final isPro = ref.watch(detailedScoreAnalysisProvider);
     final averageScore = ref.watch(averageScoreProvider);
     return Scaffold(
       backgroundColor: DesignTokens.surface,
@@ -30,7 +28,7 @@ class ScoreHistoryView extends ConsumerWidget {
       ),
       body: scores.isEmpty
           ? _buildEmptyState()
-          : _buildContent(context, scores, averageScore, isPro),
+          : _buildContent(context, scores, averageScore),
     );
   }
 
@@ -71,7 +69,6 @@ class ScoreHistoryView extends ConsumerWidget {
     BuildContext context,
     List<DrivingScore> scores,
     double averageScore,
-    bool isPro,
   ) {
     // Son 10 sürüşü grafikte göstermek için alıp ters çeviriyoruz (kronolojik)
     final chartScores = scores.take(10).toList().reversed.toList();
@@ -112,7 +109,7 @@ class ScoreHistoryView extends ConsumerWidget {
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
             final score = scores[index];
-            return _buildScoreListItem(context, score, isPro);
+            return _buildScoreListItem(context, score);
           }, childCount: scores.length),
         ),
         const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
@@ -296,7 +293,6 @@ class ScoreHistoryView extends ConsumerWidget {
   Widget _buildScoreListItem(
     BuildContext context,
     DrivingScore score,
-    bool isPro,
   ) {
     final color = DesignTokens.getScoreColor(score.score);
     final dateStr = DateFormat('dd MMM yyyy, HH:mm').format(score.sessionDate);
@@ -389,79 +385,35 @@ class ScoreHistoryView extends ConsumerWidget {
           // Component Breakdown Area
           SizedBox(
             height: 70,
-            child: Stack(
-              children: [
-                // Components
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildMiniComponent(
-                          'Uyum',
-                          score.complianceRatio,
-                          Icons.check_circle_outline,
-                        ),
-                      ),
-                      Container(width: 1, color: DesignTokens.cardBorder),
-                      Expanded(
-                        child: _buildMiniComponent(
-                          'Doğruluk',
-                          score.speedAccuracy,
-                          Icons.speed,
-                        ),
-                      ),
-                      Container(width: 1, color: DesignTokens.cardBorder),
-                      Expanded(
-                        child: _buildMiniComponent(
-                          'Pürüzsüzlük',
-                          score.smoothness,
-                          Icons.waves,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Pro Gate Overlay
-                if (!isPro)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: DesignTokens.cardSurface.withValues(alpha: 1.0),
-                      ),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PaywallView(),
-                            ),
-                          );
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.lock,
-                              size: 16,
-                              color: DesignTokens.primaryBlue,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Detaylı analiz için Pro\'ya geçin',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: DesignTokens.primaryBlue,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildMiniComponent(
+                      'Uyum',
+                      score.complianceRatio,
+                      Icons.check_circle_outline,
                     ),
                   ),
-              ],
+                  Container(width: 1, color: DesignTokens.cardBorder),
+                  Expanded(
+                    child: _buildMiniComponent(
+                      'Doğruluk',
+                      score.speedAccuracy,
+                      Icons.speed,
+                    ),
+                  ),
+                  Container(width: 1, color: DesignTokens.cardBorder),
+                  Expanded(
+                    child: _buildMiniComponent(
+                      'Pürüzsüzlük',
+                      score.smoothness,
+                      Icons.waves,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

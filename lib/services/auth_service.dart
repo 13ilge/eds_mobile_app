@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:purchases_flutter/purchases_flutter.dart';
 import '../models/user_profile.dart';
 import '../services/eds_storage_service.dart';
 import '../services/eds_geofence_service.dart';
@@ -39,7 +38,6 @@ class AuthService {
       if (user != null) {
         await user.updateDisplayName(displayName);
         await _syncUserToFirestore(user, displayName: displayName);
-        await Purchases.logIn(user.uid);
         EdsStorageService().clearCache();
         await EdsGeofenceService().reloadPoints();
         await user.reload();
@@ -59,7 +57,6 @@ class AuthService {
       );
       if (userCredential.user != null) {
         await _syncUserToFirestore(userCredential.user!);
-        await Purchases.logIn(userCredential.user!.uid);
         EdsStorageService().clearCache();
         await EdsGeofenceService().reloadPoints();
       }
@@ -84,7 +81,6 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       if (userCredential.user != null) {
         await _syncUserToFirestore(userCredential.user!);
-        await Purchases.logIn(userCredential.user!.uid);
         EdsStorageService().clearCache();
         await EdsGeofenceService().reloadPoints();
       }
@@ -105,7 +101,6 @@ class AuthService {
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
-    await Purchases.logOut();
     
     EdsStorageService().clearCache();
     await EdsGeofenceService().reloadPoints();
@@ -116,7 +111,6 @@ class AuthService {
     if (user != null) {
       final uid = user.uid;
       
-      await Purchases.logOut();
       EdsStorageService().clearCache();
       
       final batch = _firestore.batch();
@@ -135,12 +129,32 @@ class AuthService {
         batch.delete(doc.reference);
       }
 
-      // Delete received shares
-      final sharedPoints = await _firestore.collection('shared_points').where('targetUid', isEqualTo: uid).get();
-      for (final doc in sharedPoints.docs) {
+      // Delete received and sent shares
+      final receivedShares = await _firestore
+          .collection('shared_points')
+          .where('targetUid', isEqualTo: uid)
+          .get();
+      for (final doc in receivedShares.docs) {
         batch.delete(doc.reference);
       }
-      
+
+      final sentShares = await _firestore
+          .collection('shared_points')
+          .where('ownerUid', isEqualTo: uid)
+          .get();
+      for (final doc in sentShares.docs) {
+        batch.delete(doc.reference);
+      }
+
+      // Delete community points owned by the user
+      final communityPoints = await _firestore
+          .collection('community_points')
+          .where('ownerUid', isEqualTo: uid)
+          .get();
+      for (final doc in communityPoints.docs) {
+        batch.delete(doc.reference);
+      }
+
       await batch.commit();
       
       await user.delete();

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/user_profile_provider.dart';
-import '../providers/subscription_provider.dart';
-import '../services/subscription_service.dart';
 import '../theme/design_tokens.dart';
 import '../models/badge_model.dart';
 import '../models/user_profile.dart';
@@ -285,22 +283,6 @@ class ProfileView extends ConsumerWidget {
                 const SizedBox(height: 32),
               ],
 
-              if (ref.watch(isProProvider))
-                ElevatedButton.icon(
-                  onPressed: () => SubscriptionService().manageSubscription(),
-                  icon: const Icon(Icons.workspace_premium),
-                  label: const Text('Aboneliği Yönet / İptal Et'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: DesignTokens.primaryBlue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
-              if (ref.watch(isProProvider)) const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () async {
                   final authService = ref.read(authServiceProvider);

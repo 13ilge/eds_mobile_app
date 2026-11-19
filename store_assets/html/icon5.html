@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=512, height=512, initial-scale=1">
+<title>EDS Hız Asistanı - İkon 5</title>
+<style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body {
+      position: relative;
+      box-sizing: border-box;
+      width: 512px; height: 512px; margin: 0; overflow: hidden;
+      font-family: "Arial Black", Arial, "Segoe UI", sans-serif;
+      background-color: #2E3134;
+      /* gerçekçi asfalt: vinyet + ışık + yamalar + gren + taş greni */
+      background-image:
+        radial-gradient(ellipse 74% 64% at 50% 54%, rgba(0,0,0,0) 30%, rgba(0,0,0,.78) 100%),
+        linear-gradient(to bottom, rgba(116,128,140,.20) 0%, rgba(116,128,140,0) 28%),
+        radial-gradient(ellipse 56% 40% at 45% 60%, rgba(220,228,236,.17), rgba(220,228,236,0) 78%),
+        radial-gradient(ellipse 140px 92px at 16% 28%, rgba(0,0,0,.20), rgba(0,0,0,0) 72%),
+        radial-gradient(ellipse 96px 164px at 82% 34%, rgba(0,0,0,.17), rgba(0,0,0,0) 72%),
+        radial-gradient(ellipse 180px 104px at 62% 88%, rgba(0,0,0,.16), rgba(0,0,0,0) 74%),
+        radial-gradient(circle 78px at 29% 70%, rgba(0,0,0,.18), rgba(0,0,0,0) 70%),
+        radial-gradient(ellipse 112px 70px at 92% 70%, rgba(0,0,0,.15), rgba(0,0,0,0) 70%),
+        /* açık taş greni */
+        radial-gradient(circle at 34px 58px, rgba(226,232,238,.20) 0 1.1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 118px 22px, rgba(226,232,238,.16) 0 1px, rgba(0,0,0,0) 1.8px),
+        radial-gradient(circle at 196px 96px, rgba(226,232,238,.14) 0 .9px, rgba(0,0,0,0) 1.7px),
+        radial-gradient(circle at 268px 36px, rgba(226,232,238,.18) 0 1.2px, rgba(0,0,0,0) 2.1px),
+        radial-gradient(circle at 352px 84px, rgba(226,232,238,.15) 0 1px, rgba(0,0,0,0) 1.8px),
+        radial-gradient(circle at 424px 26px, rgba(226,232,238,.19) 0 1.1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 486px 118px, rgba(226,232,238,.13) 0 .8px, rgba(0,0,0,0) 1.6px),
+        radial-gradient(circle at 62px 168px, rgba(226,232,238,.15) 0 1px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 214px 198px, rgba(226,232,238,.12) 0 .9px, rgba(0,0,0,0) 1.7px),
+        radial-gradient(circle at 408px 196px, rgba(226,232,238,.14) 0 1px, rgba(0,0,0,0) 1.8px),
+        radial-gradient(circle at 470px 232px, rgba(226,232,238,.12) 0 .9px, rgba(0,0,0,0) 1.7px),
+        radial-gradient(circle at 96px 396px, rgba(226,232,238,.14) 0 1px, rgba(0,0,0,0) 1.8px),
+        radial-gradient(circle at 178px 462px, rgba(226,232,238,.16) 0 1.1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 302px 414px, rgba(226,232,238,.13) 0 .9px, rgba(0,0,0,0) 1.8px),
+        radial-gradient(circle at 396px 478px, rgba(226,232,238,.15) 0 1px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 472px 402px, rgba(226,232,238,.12) 0 .9px, rgba(0,0,0,0) 1.7px),
+        radial-gradient(circle at 44px 496px, rgba(226,232,238,.13) 0 1px, rgba(0,0,0,0) 1.8px),
+        /* koyu taş greni */
+        radial-gradient(circle at 78px 34px, rgba(0,0,0,.30) 0 1.2px, rgba(0,0,0,0) 2.2px),
+        radial-gradient(circle at 158px 128px, rgba(0,0,0,.26) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 244px 62px, rgba(0,0,0,.28) 0 1.1px, rgba(0,0,0,0) 2.1px),
+        radial-gradient(circle at 318px 148px, rgba(0,0,0,.24) 0 .9px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 388px 44px, rgba(0,0,0,.28) 0 1.1px, rgba(0,0,0,0) 2.1px),
+        radial-gradient(circle at 452px 158px, rgba(0,0,0,.24) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 24px 232px, rgba(0,0,0,.26) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 132px 268px, rgba(0,0,0,.22) 0 .9px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 296px 242px, rgba(0,0,0,.24) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 366px 286px, rgba(0,0,0,.22) 0 .9px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 490px 316px, rgba(0,0,0,.24) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 58px 372px, rgba(0,0,0,.24) 0 1.1px, rgba(0,0,0,0) 2.1px),
+        radial-gradient(circle at 236px 336px, rgba(0,0,0,.20) 0 .9px, rgba(0,0,0,0) 1.9px),
+        radial-gradient(circle at 342px 386px, rgba(0,0,0,.22) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 132px 430px, rgba(0,0,0,.24) 0 1.1px, rgba(0,0,0,0) 2.1px),
+        radial-gradient(circle at 442px 436px, rgba(0,0,0,.22) 0 1px, rgba(0,0,0,0) 2px),
+        radial-gradient(circle at 264px 494px, rgba(0,0,0,.24) 0 1.1px, rgba(0,0,0,0) 2.1px),
+        /* ince gren dokusu */
+        repeating-linear-gradient(34deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 3px),
+        repeating-linear-gradient(-61deg, rgba(0,0,0,.07) 0 1px, rgba(0,0,0,0) 1px 4px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, rgba(0,0,0,0) 1px 5px);
+    }
+    .scene {
+      position: absolute; inset: 0;
+      box-sizing: border-box;
+      width: 512px; height: 512px;
+      overflow: hidden;
+    }
+
+    /* ---------- asfalt yüzey kusurları (kılcal çatlak / tamir şeridi) ---------- */
+    .seam {
+      position: absolute;
+      box-sizing: border-box;
+      background: #1B1F23;
+      filter: blur(1px);
+    }
+    .sm1 { left: -40px; top: 372px; width: 620px; height: 4px; transform: rotate(-3.2deg); opacity: .30; border-radius: 3px; }
+    .sm2 { left: -10px; top: 118px; width: 560px; height: 2.5px; transform: rotate(2.4deg); opacity: .22; border-radius: 2px; }
+
+    /* ---------- zemine yatırılmış şerit kenarları ---------- */
+    .ground {
+      position: absolute;
+      left: -78px; top: -26px;
+      box-sizing: border-box;
+      width: 668px; height: 566px;
+      transform: perspective(560px) rotateX(30deg);
+      transform-origin: 50% 100%;
+    }
+    .edge {
+      position: absolute; top: 0;
+      box-sizing: border-box;
+      width: 28px; height: 566px;
+      background: repeating-linear-gradient(to bottom,
+        rgba(242,243,244,.86) 0 54px,
+        rgba(242,243,244,0) 54px 108px);
+      box-shadow: 0 0 14px rgba(255,255,255,.05);
+    }
+    /* boya aşınması: yatay aşınma blotları + ince gren */
+    .edge::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(46,49,52,.55) 0 6px,
+          rgba(46,49,52,0) 6px 21px,
+          rgba(46,49,52,.30) 21px 24px,
+          rgba(46,49,52,0) 24px 37px),
+        repeating-linear-gradient(88deg,
+          rgba(46,49,52,.22) 0 1px,
+          rgba(46,49,52,0) 1px 4px);
+      opacity: .5;
+    }
+    .edge-l { left: 118px; }
+    .edge-r { left: 523px; }
+    /* uzaklık pusu: üstteki şerit boyaları asfalt içinde kaybolsun */
+    .ground::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom,
+        rgba(38,41,45,.92) 0%,
+        rgba(38,41,45,.55) 20%,
+        rgba(38,41,45,.18) 42%,
+        rgba(38,41,45,0) 60%);
+    }
+
+    /* ---------- yola boyanmış EDS ---------- */
+    .paint {
+      position: absolute;
+      left: 0; top: 176px;
+      box-sizing: border-box;
+      width: 512px; height: 232px;
+      overflow: hidden;
+      transform: perspective(520px) rotateX(24deg);
+      transform-origin: 50% 100%;
+    }
+    .word {
+      position: absolute;
+      left: 0; right: 0; top: 26px;
+      box-sizing: border-box;
+      text-align: center;
+      font-size: 114px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 15px;
+      text-indent: 15px;
+      color: #F2F3F4;
+      text-shadow:
+        0 2px 0 rgba(0,0,0,.30),
+        0 3px 6px rgba(0,0,0,.22),
+        0 0 24px rgba(255,255,255,.08);
+    }
+    /* yıpranmış boya: kısmi asfalt aşınmaları */
+    .wear {
+      position: absolute;
+      left: 0; top: 34px;
+      box-sizing: border-box;
+      width: 512px; height: 130px;
+      opacity: .07;
+      mix-blend-mode: multiply;
+      background-repeat: no-repeat;
+      background-image:
+        linear-gradient(90deg, rgba(0,0,0,0) 0%, #1F2327 16%, #1F2327 54%, rgba(0,0,0,0) 78%),
+        linear-gradient(90deg, rgba(0,0,0,0) 22%, #1F2327 38%, #1F2327 72%, rgba(0,0,0,0) 92%);
+      background-size: 100% 3.5px, 100% 2px;
+      background-position: 0 44%, 0 68%;
+    }
+    /* boya kopmaları */
+    .chip {
+      position: absolute;
+      border-radius: 50%;
+      background: #2A2E32;
+      filter: blur(1.6px);
+      opacity: .16;
+    }
+    .c1 { left: 176px; top: 58px;  width: 14px; height: 9px; }
+    .c2 { left: 358px; top: 82px;  width: 11px; height: 7px; opacity: .13; }
+    .c3 { left: 268px; top: 116px; width: 16px; height: 6px; opacity: .12; }
+    .c4 { left: 416px; top: 124px; width: 9px;  height: 8px; opacity: .14; }
+
+    /* boya püskürtme izleri */
+    .spatter {
+      position: absolute;
+      border-radius: 50%;
+      background: #F5F3E6;
+      filter: blur(2px);
+      opacity: .28;
+    }
+    .s1 { left: 104px; top: 132px; width: 18px; height: 11px; }
+    .s2 { left: 392px; top: 102px; width: 12px; height: 8px; opacity: .22; }
+    .s3 { left: 228px; top: 158px; width: 9px;  height: 7px; opacity: .20; }
+
+    /* ---------- alt köşelerde lastik izleri ---------- */
+    .tire {
+      position: absolute;
+      border-radius: 50%;
+      background: #14171A;
+      opacity: .16;
+      filter: blur(1.5px);
+    }
+    .t1 { left: -52px; bottom: 24px; width: 312px; height: 16px; transform: rotate(-9deg); }
+    .t2 { right: -58px; bottom: 82px; width: 268px; height: 12px; transform: rotate(-7deg); opacity: .12; }
+
+    /* ön plan karartması: yakın zemin gölgesi */
+    .fg {
+      position: absolute;
+      left: 0; bottom: 0;
+      box-sizing: border-box;
+      width: 512px; height: 108px;
+      background: linear-gradient(to top,
+        rgba(8,10,12,.50) 0%,
+        rgba(8,10,12,.20) 46%,
+        rgba(8,10,12,0) 100%);
+    }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="seam sm2"></div>
+    <div class="seam sm1"></div>
+
+    <div class="ground">
+      <div class="edge edge-l"></div>
+      <div class="edge edge-r"></div>
+    </div>
+
+    <div class="paint">
+      <div class="word">EDS</div>
+      <div class="wear"></div>
+      <div class="chip c1"></div>
+      <div class="chip c2"></div>
+      <div class="chip c3"></div>
+      <div class="chip c4"></div>
+      <div class="spatter s1"></div>
+      <div class="spatter s2"></div>
+      <div class="spatter s3"></div>
+    </div>
+
+    <div class="tire t1"></div>
+    <div class="tire t2"></div>
+    <div class="fg"></div>
+  </div>
+</body>
+</html>

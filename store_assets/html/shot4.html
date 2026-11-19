@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1080, height=2400, initial-scale=1">
+<title>EDS Hız Asistanı - Sürüşünü Canlı Takip Et</title>
+<style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body {
+      width: 1080px; height: 2400px; margin: 0; overflow: hidden;
+      font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+      background: linear-gradient(160deg, #0B1220 0%, #1E3A8A 55%, #2563EB 100%);
+      color: #ffffff;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- dekoratif katman ---------- */
+    .bg { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+    .ring { position: absolute; border-radius: 50%; border: 3px solid rgba(59,130,246,.25); }
+    .r1 { width: 980px;  height: 980px;  left: -420px; top: -460px; }
+    .r2 { width: 1320px; height: 1320px; left: -590px; top: -630px; }
+    .r3 { width: 640px;  height: 640px;  left: -250px; top: -290px; border-color: rgba(59,130,246,.18); }
+    .r4 { width: 980px;  height: 980px;  right: -430px; bottom: -470px; }
+    .r5 { width: 1320px; height: 1320px; right: -600px; bottom: -640px; }
+    .sl { position: absolute; width: 8px; top: -300px; border-radius: 8px;
+          background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.10) 50%, rgba(255,255,255,0) 100%);
+          transform: rotate(24deg); }
+    .sl1 { right: 150px; height: 2800px; opacity: .65; }
+    .sl2 { right: 300px; height: 2600px; top: -200px; opacity: .35; }
+    .sl3 { right: 40px;  height: 2400px; opacity: .50; }
+    .glow { position: absolute; left: 50%; top: 1389px; width: 1140px; height: 1140px;
+            margin-left: -570px; margin-top: -570px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,.38) 0%, rgba(59,130,246,0) 65%); }
+
+    /* ---------- yerleşim ---------- */
+    .frame {
+      position: relative; z-index: 1;
+      box-sizing: border-box;
+      width: 1080px; height: 2400px;
+      padding: 70px 80px;
+      display: flex; flex-direction: column;
+    }
+    .top {
+      flex: none; height: 440px;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: flex-end;
+    }
+    .pill {
+      display: inline-block;
+      padding: 14px 32px;
+      background: rgba(59,130,246,.25);
+      border: 2px solid rgba(255,255,255,.30);
+      border-radius: 999px;
+      font-size: 32px; line-height: 1; font-weight: 700;
+      letter-spacing: 2px; color: #ffffff; white-space: nowrap;
+    }
+    h1 {
+      margin: 32px 0 0;
+      font-size: 88px; line-height: 1.1; font-weight: 800;
+      letter-spacing: -1.5px; color: #ffffff;
+    }
+    .sub {
+      margin: 20px 0 0; max-width: 900px;
+      font-size: 40px; line-height: 1.4; font-weight: 400;
+      color: rgba(255,255,255,.85);
+    }
+
+    .stage {
+      flex: 1 1 auto; min-height: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .phone {
+      box-sizing: content-box;
+      width: 752px;
+      aspect-ratio: 1080 / 2400;
+      padding: 16px;
+      background: #0F172A;
+      border-radius: 52px;
+      box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 0 80px rgba(59,130,246,.35);
+    }
+    .phone img {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover; border-radius: 36px;
+    }
+
+    .caps {
+      flex: none; height: 62px;
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+    }
+    .cap {
+      padding: 18px 26px;
+      background: rgba(255,255,255,.10);
+      border: 2px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      font-size: 22px; line-height: 1; font-weight: 600;
+      color: #ffffff; white-space: nowrap;
+    }
+</style>
+</head>
+<body>
+  <div class="bg">
+    <div class="glow"></div>
+    <div class="ring r1"></div>
+    <div class="ring r2"></div>
+    <div class="ring r3"></div>
+    <div class="ring r4"></div>
+    <div class="ring r5"></div>
+    <div class="sl sl1"></div>
+    <div class="sl sl2"></div>
+    <div class="sl sl3"></div>
+  </div>
+
+  <div class="frame">
+    <div class="top">
+      <span class="pill">GERÇEK ZAMANLI</span>
+      <h1>Sürüşünü Canlı Takip Et</h1>
+      <p class="sub">Anlık hız, mesafe ve süre yolculuk boyunca ekranında. Koridora girişte otomatik başlar.</p>
+    </div>
+
+    <div class="stage">
+      <div class="phone">
+        <img src="../screenshot_7_izleme.png" alt="Gerçek zamanlı sürüş izleme ekranı">
+      </div>
+    </div>
+
+    <div class="caps">
+      <span class="cap">Anlık &amp; Ortalama Hız</span>
+      <span class="cap">Mesafe &amp; Süre</span>
+      <span class="cap">Otomatik Oturum</span>
+    </div>
+  </div>
+</body>
+</html>

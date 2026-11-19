@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=512, height=512, initial-scale=1">
+<title>EDS Hız Asistanı - İkon 1</title>
+<style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body {
+      position: relative;
+      width: 512px; height: 512px; margin: 0; overflow: hidden;
+      background: linear-gradient(145deg, #2563EB 0%, #1D4ED8 60%, #1E3A8A 100%);
+      font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+    }
+    .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,.30) 100%);
+    }
+
+    /* ---------- kadran ---------- */
+    .dial {
+      position: absolute;
+      left: 96px; top: 105px;
+      box-sizing: border-box;
+      width: 320px; height: 160px;
+      border: 18px solid #ffffff;
+      border-bottom: none;
+      border-radius: 160px 160px 0 0;
+      box-shadow: 0 30px 60px rgba(0,0,0,.35);
+    }
+    .ticks { position: absolute; left: 256px; top: 265px; width: 0; height: 0; }
+    .tick {
+      position: absolute;
+      left: -4px; top: -136px;
+      width: 8px; height: 26px;
+      background: #ffffff;
+      border-radius: 4px;
+      transform-origin: 4px 136px;
+    }
+    .k1  { transform: rotate(-72deg); }
+    .k2  { transform: rotate(-54deg); }
+    .k3  { transform: rotate(-36deg); }
+    .k4  { transform: rotate(-18deg); }
+    .k5  { transform: rotate(0deg); }
+    .k6  { transform: rotate(18deg); }
+    .k7  { transform: rotate(36deg); }
+    .k8  { transform: rotate(54deg); }
+    .k9  { transform: rotate(72deg); }
+
+    .needle {
+      position: absolute;
+      left: -7px; top: -120px;
+      width: 14px; height: 120px;
+      background: #F59E0B;
+      border-radius: 20px;
+      transform-origin: 7px 120px;
+      transform: rotate(35deg);
+      box-shadow: 0 6px 18px rgba(0,0,0,.30);
+    }
+    .hub {
+      position: absolute;
+      left: -24px; top: -24px;
+      width: 48px; height: 48px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 6px 16px rgba(0,0,0,.25);
+    }
+
+    /* ---------- uyarı üçgeni ---------- */
+    .warn {
+      position: absolute;
+      left: -62px; top: 34px;
+      width: 0; height: 0;
+      border-left: 62px solid transparent;
+      border-right: 62px solid transparent;
+      border-bottom: 108px solid #0B1220;
+    }
+    .warn-in {
+      position: absolute;
+      left: -53px; top: 43px;
+      width: 0; height: 0;
+      border-left: 53px solid transparent;
+      border-right: 53px solid transparent;
+      border-bottom: 92px solid #F59E0B;
+    }
+    .bang {
+      position: absolute;
+      left: -4px; top: 72px;
+      width: 8px; height: 28px;
+      background: #ffffff;
+      border-radius: 4px;
+    }
+    .bang-dot {
+      position: absolute;
+      left: -5px; top: 106px;
+      width: 10px; height: 10px;
+      background: #ffffff;
+      border-radius: 50%;
+    }
+</style>
+</head>
+<body>
+  <div class="vignette"></div>
+
+  <div class="dial"></div>
+
+  <div class="ticks">
+    <div class="tick k1"></div>
+    <div class="tick k2"></div>
+    <div class="tick k3"></div>
+    <div class="tick k4"></div>
+    <div class="tick k5"></div>
+    <div class="tick k6"></div>
+    <div class="tick k7"></div>
+    <div class="tick k8"></div>
+    <div class="tick k9"></div>
+
+    <div class="needle"></div>
+    <div class="hub"></div>
+
+    <div class="warn"></div>
+    <div class="warn-in"></div>
+    <div class="bang"></div>
+    <div class="bang-dot"></div>
+  </div>
+</body>
+</html>

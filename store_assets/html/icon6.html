@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=512, height=512, initial-scale=1">
+<title>EDS Hız Asistanı - İkon 6</title>
+<style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body {
+      position: relative;
+      box-sizing: border-box;
+      width: 512px; height: 512px; margin: 0; overflow: hidden;
+      font-family: Arial, "Segoe UI", Helvetica, sans-serif;
+      background-color: #0B1220;
+      background-image:
+        linear-gradient(160deg, #1E3A8A 0%, #16265C 44%, #0B1220 100%),
+        linear-gradient(to bottom, rgba(255,255,255,.05) 0%, rgba(255,255,255,0) 40%),
+        radial-gradient(ellipse 82% 46% at 50% 64%, rgba(245,158,11,.13), rgba(245,158,11,0) 72%),
+        repeating-linear-gradient(32deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 3px),
+        repeating-linear-gradient(-58deg, rgba(0,0,0,.05) 0 1px, rgba(0,0,0,0) 1px 4px);
+      background-blend-mode: normal, normal, normal, overlay, overlay;
+    }
+    .scene {
+      position: absolute; inset: 0;
+      box-sizing: border-box;
+      width: 512px; height: 512px;
+      overflow: hidden;
+    }
+
+    /* ---------- ufukta amber radar yayları ---------- */
+    .arc {
+      position: absolute;
+      box-sizing: border-box;
+      border-radius: 50%;
+      background: conic-gradient(from 208deg,
+        rgba(245,158,11,.95) 0deg 54deg,
+        rgba(245,158,11,0) 54deg 88deg,
+        rgba(245,158,11,.95) 88deg 158deg,
+        rgba(245,158,11,0) 158deg 360deg);
+      -webkit-mask: radial-gradient(closest-side, rgba(0,0,0,0) calc(100% - 3px), #000 calc(100% - 3px));
+              mask: radial-gradient(closest-side, rgba(0,0,0,0) calc(100% - 3px), #000 calc(100% - 3px));
+    }
+    .a1 { left: 156px; top: 200px; width: 200px; height: 200px; opacity: .25; }
+    .a2 { left: 96px;  top: 140px; width: 320px; height: 320px; opacity: .15; }
+    .a3 { left: 36px;  top: 80px;  width: 440px; height: 440px; opacity: .08; }
+
+    /* ---------- perspektifli tek şerit ---------- */
+    .road {
+      position: absolute;
+      left: -26px; bottom: -30px;
+      box-sizing: border-box;
+      width: 564px; height: 336px;
+      background-color: #23272B;
+      background-image:
+        repeating-linear-gradient(36deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 3px),
+        repeating-linear-gradient(-62deg, rgba(0,0,0,.07) 0 1px, rgba(0,0,0,0) 1px 4px),
+        radial-gradient(ellipse 190px 120px at 34% 26%, rgba(0,0,0,.20), rgba(0,0,0,0) 74%),
+        radial-gradient(ellipse 150px 90px at 72% 62%, rgba(0,0,0,.18), rgba(0,0,0,0) 74%);
+      transform: perspective(500px) rotateX(55deg);
+      transform-origin: 50% 100%;
+      box-shadow:
+        0 -1px 0 rgba(245,158,11,.22),
+        0 -26px 70px rgba(0,0,0,.55);
+    }
+    .lane {
+      position: absolute; top: 0;
+      box-sizing: border-box;
+      width: 14px; height: 100%;
+      background: repeating-linear-gradient(to bottom,
+        rgba(255,255,255,.92) 0 30px,
+        rgba(255,255,255,0) 30px 70px);
+    }
+    .lane-l { left: 66px; }
+    .lane-r { right: 66px; }
+
+    /* ---------- şeride boyanmış EDS ---------- */
+    .paint {
+      position: absolute;
+      left: 0; top: 236px;
+      box-sizing: border-box;
+      width: 512px; height: 200px;
+      overflow: hidden;
+      transform: perspective(500px) rotateX(40deg);
+      transform-origin: 50% 100%;
+    }
+    .word {
+      position: absolute;
+      left: 0; right: 0; top: 30px;
+      box-sizing: border-box;
+      text-align: center;
+      font-size: 130px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: 16px;
+      text-indent: 16px;
+      color: #FFFFFF;
+      text-shadow:
+        0 0 24px rgba(245,158,11,.35),
+        0 3px 0 rgba(0,0,0,.45);
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="arc a3"></div>
+    <div class="arc a2"></div>
+    <div class="arc a1"></div>
+
+    <div class="road">
+      <div class="lane lane-l"></div>
+      <div class="lane lane-r"></div>
+    </div>
+
+    <div class="paint">
+      <div class="word">EDS</div>
+    </div>
+  </div>
+</body>
+</html>

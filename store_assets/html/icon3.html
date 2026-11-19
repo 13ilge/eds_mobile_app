@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=512, height=512, initial-scale=1">
+<title>EDS Hız Asistanı - İkon 3</title>
+<style>
+    html, body { margin: 0; padding: 0; overflow: hidden; }
+    body {
+      position: relative;
+      box-sizing: border-box;
+      width: 512px; height: 512px; margin: 0; overflow: hidden;
+      background: linear-gradient(145deg, #2563EB 0%, #1E3A8A 100%);
+    }
+    .scene {
+      position: absolute; inset: 0;
+      box-sizing: border-box;
+      width: 512px; height: 512px;
+      overflow: hidden;
+    }
+
+    /* ---------- beyaz kadran gövdesi ---------- */
+    .dial {
+      position: absolute;
+      left: 76px; top: 76px;
+      box-sizing: border-box;
+      width: 360px; height: 360px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 25px 60px rgba(0,0,0,.4);
+    }
+
+    /* ---------- renkli hız dilimleri (conic halka) ---------- */
+    .band {
+      position: absolute;
+      left: 32px; top: 32px;
+      box-sizing: border-box;
+      width: 296px; height: 296px;
+      border-radius: 50%;
+      background: conic-gradient(from 240deg,
+        #10B981 0deg 132deg,
+        #FFFFFF 132deg 135.5deg,
+        #F59E0B 135.5deg 211.5deg,
+        #FFFFFF 211.5deg 215deg,
+        #EF4444 215deg 261deg,
+        #FFFFFF 261deg 360deg);
+    }
+    .punch {
+      position: absolute;
+      left: 62px; top: 62px;
+      box-sizing: border-box;
+      width: 236px; height: 236px;
+      background: #FFFFFF;
+      border-radius: 50%;
+    }
+
+    /* ---------- kadran içi tik çizgileri ---------- */
+    .ticks {
+      position: absolute;
+      left: 180px; top: 180px;
+      width: 0; height: 0;
+    }
+    .tick {
+      position: absolute;
+      left: -2.5px; top: -96px;
+      box-sizing: border-box;
+      width: 5px; height: 20px;
+      background: #94A3B8;
+      border-radius: 3px;
+      transform-origin: 2.5px 96px;
+    }
+    .k1 { transform: rotate(-78deg); }
+    .k2 { transform: rotate(-52deg); }
+    .k3 { transform: rotate(-26deg); }
+    .k4 { transform: rotate(0deg); }
+    .k5 { transform: rotate(26deg); }
+    .k6 { transform: rotate(52deg); }
+    .k7 { transform: rotate(78deg); }
+
+    /* ---------- amber ibre ve göbek ---------- */
+    .needle {
+      position: absolute;
+      left: -11px; top: -112px;
+      box-sizing: border-box;
+      width: 22px; height: 112px;
+      background: #F59E0B;
+      border-radius: 22px;
+      transform-origin: 11px 112px;
+      transform: rotate(40deg);
+      box-shadow: 0 6px 18px rgba(0,0,0,.30);
+    }
+    .hub {
+      position: absolute;
+      left: -14px; top: -14px;
+      box-sizing: border-box;
+      width: 28px; height: 28px;
+      background: #FFFFFF;
+      border: 6px solid #0B1220;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,.35);
+    }
+</style>
+</head>
+<body>
+  <div class="scene">
+    <div class="dial">
+      <div class="band"></div>
+      <div class="punch"></div>
+
+      <div class="ticks">
+        <div class="tick k1"></div>
+        <div class="tick k2"></div>
+        <div class="tick k3"></div>
+        <div class="tick k4"></div>
+        <div class="tick k5"></div>
+        <div class="tick k6"></div>
+        <div class="tick k7"></div>
+
+        <div class="needle"></div>
+        <div class="hub"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
